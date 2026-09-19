@@ -8,12 +8,12 @@ digraph n_3d_developer {
     nodesep=0.6
     ranksep=0.7
     bgcolor="white"
-    source_hash="8291c262c5576c7ab601466cf316b7c47fe72918a26efbe2048cf6c9a2c92885"
+    source_hash="7f9e7f44a97bf2ca8e852a793d760c52429abb2fe4b4b2e5582942f44c4f1efe"
 
     node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
     edge [fontname="Helvetica", fontsize=9]
 
-    root_3d_developer [label="3d-developer v0.1.0\n0 tools · 0 agents\n~544 tok aggregate", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", penwidth=2]
+    root_3d_developer [label="3d-developer v0.1.0\n0 tools · 0 agents\n~613 tok aggregate", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", penwidth=2]
 
     subgraph cluster_behaviors {
         label="Behaviors"
@@ -21,7 +21,7 @@ digraph n_3d_developer {
         fillcolor="#f9f9f9"
         color="#999999"
 
-        beh_3d_core_behavior [label="3d-core-behavior\n1 tools · 1 ctx\n~3247 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+        beh_3d_core_behavior [label="3d-core-behavior\n1 tools · 1 ctx\n~3198 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
         beh_3d_babylonjs_behavior [label="3d-babylonjs-behavior\n~285 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
         beh_3d_unreal_behavior [label="3d-unreal-behavior\n~267 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
     }
@@ -65,7 +65,7 @@ digraph n_3d_developer {
         fillcolor="#f9f9f9"
         color="#999999"
 
-        ctx_3d_developer_awareness_md [label="3d-developer-awareness.md\n~540 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+        ctx_3d_developer_awareness_md [label="3d-developer-awareness.md\n~491 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
     }
 
     subgraph cluster_legend {

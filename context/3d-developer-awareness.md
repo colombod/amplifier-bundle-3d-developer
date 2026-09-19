@@ -16,19 +16,17 @@ specialists. Each owns one question. Delegate rather than answer from memory.
 | Motion over time — keyframes, skeletal, transitions | `3d-developer:animation-engineer` |
 | Smoke, explosions, energy flow, fluid, GPU particles | `3d-developer:particle-fx-artist` |
 
-**Platform layer — used after the design exists**, and only present if its
-behavior is composed: `3d-developer:babylonjs-specialist` (web, WebGL2/WebGPU),
-`3d-developer:unreal-specialist` (UE5).
+**Platform layer — used after the design exists**, present only if its behavior
+is composed: `babylonjs-specialist` (web), `unreal-specialist` (UE5).
 
-**Review.** Three critics, cold and independent, never in conversation with each
-other: `perf-budget-critic` (holds frame time), `visual-quality-critic` (reads
-correctly, regression catchable), `correctness-critic` (color space, depth
-precision, alpha, units — errors that look like art direction). Run all three at
-once with `load_skill(skill_name="3d-design-review")`; gate a pipeline with
-`@3d-developer:recipes/design-review-pipeline.yaml`. The whole arc — scope,
-design, reconcile, review, revise — is `load_skill(skill_name="3d-build-loop")`.
+**Review.** Three critics, cold and independent: `perf-budget-critic` (holds
+frame time), `visual-quality-critic` (reads correctly, regression catchable),
+`correctness-critic` (color space, depth precision, alpha, units — errors that
+look like art direction). All three at once:
+`load_skill(skill_name="3d-design-review")`. The whole arc — scope, design,
+reconcile, review, revise — `load_skill(skill_name="3d-build-loop")`. Gated
+pipeline: `@3d-developer:recipes/design-review-pipeline.yaml`.
 
 **Two standing rules.** Every design states its frame-cost claim explicitly; a
 critic cannot refute a budget nobody wrote down. And design engine-agnostic,
-implement platform-specific — reaching for an engine API first is how a design
-gets shaped by whatever that engine made easy.
+implement platform-specific.

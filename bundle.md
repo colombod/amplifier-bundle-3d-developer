@@ -26,6 +26,11 @@ wants both of them to justify the frame time. This bundle makes each of those
 lenses a separate agent so the disagreement happens *before* the frame budget
 blows, not after.
 
+This root is the **full bench** — both platform layers composed. If you only
+work in one engine, `bundles/with-babylonjs.yaml` and `bundles/with-unreal.yaml`
+are the cheaper doors: each carries exactly one specialist, and the other
+engine's knowledge never enters the session.
+
 ## How to use it
 
 1. **Scope first.** If it is not obvious that the thing should be 3D at all,
