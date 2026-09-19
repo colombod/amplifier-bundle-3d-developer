@@ -1,0 +1,58 @@
+bundle:
+  name: 3d-core-behavior
+  version: 0.1.0
+  description: >
+    The engine-agnostic 3D visualization capability: ten domain lenses (scene
+    architecture, rendering pipeline, materials/shading, interaction, camera and
+    navigation, post-processing FX, labels and callouts, animation, particles,
+    and the when-is-3D-right strategist), three adversarial critics (perf
+    budget, visual quality, correctness), the review skills, and a thin
+    awareness pointer. Compose this onto any bundle to add 3D visualization
+    expertise. Platform specifics (Babylon.js, Unreal) are SEPARATE behaviors so
+    a web-only consumer never pays for Unreal knowledge, and vice versa.
+
+# Infra this capability rides on, declared as BEHAVIORS (never root bundles) so that
+# `bundle add behaviors/3d-core.yaml --app` composes the whole thing without re-dragging
+# foundation into a session that already has it:
+#   - recipes -> tool-recipes, for the optional design-review pipeline
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-recipes@main#subdirectory=behaviors/recipes.yaml
+
+# The review skills. The source is a PINNED GIT URL, deliberately NOT "@3d-developer:skills":
+# git-URL sources resolve EAGERLY at mount, so the slash commands register before the CLI
+# snapshots its shortcut table; "@namespace:path" sources resolve deferred and the slash
+# command silently fails to register. Same pattern amplifier-bundle-claim-guard uses.
+#
+# MERGE SAFETY: tools merge by module id, and list-valued config CONCATENATES with dedup,
+# so this APPENDS to whatever skills the host already configured; it never replaces them.
+# `visibility` is deliberately NOT set here -- the host owns that policy.
+tools:
+  - module: tool-skills
+    source: git+https://github.com/microsoft/amplifier-bundle-skills@main#subdirectory=modules/tool-skills
+    config:
+      skills:
+        - "git+https://github.com/colombod/amplifier-bundle-3d-developer@main#subdirectory=skills"
+
+# Ten domain lenses + three critics. Each domain lens is a context sink: its heavy
+# reference doc is @mentioned from the agent body, so it costs tokens only inside that
+# agent's own sub-session, never in the host session.
+agents:
+  include:
+    - 3d-developer:dataviz-strategist
+    - 3d-developer:scene-architect
+    - 3d-developer:rendering-engineer
+    - 3d-developer:shading-artist
+    - 3d-developer:interaction-designer
+    - 3d-developer:camera-navigator
+    - 3d-developer:postfx-artist
+    - 3d-developer:label-callout-designer
+    - 3d-developer:animation-engineer
+    - 3d-developer:particle-fx-artist
+    - 3d-developer:perf-budget-critic
+    - 3d-developer:visual-quality-critic
+    - 3d-developer:correctness-critic
+
+# Thin awareness pointer only (~250 tokens). All heavy knowledge lives in the agents.
+context:
+  include:
+    - 3d-developer:context/3d-developer-awareness.md

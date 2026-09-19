@@ -1,0 +1,13 @@
+bundle:
+  name: 3d-unreal-behavior
+  version: 0.1.0
+  description: >
+    Unreal Engine 5 implementation layer for the 3D visualization bench. Adds
+    one specialist agent that turns an engine-agnostic design from the 3d-core
+    domain lenses into real Unreal constructs (C++/Blueprint, Nanite, Lumen,
+    Niagara, Sequencer, post-process volumes, UMG). Kept separate from 3d-core
+    so a web-only consumer never carries it.
+
+agents:
+  include:
+    - 3d-developer:unreal-specialist

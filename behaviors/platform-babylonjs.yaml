@@ -1,0 +1,14 @@
+bundle:
+  name: 3d-babylonjs-behavior
+  version: 0.1.0
+  description: >
+    Babylon.js / WebGL2 / WebGPU implementation layer for the 3D visualization
+    bench. Adds one specialist agent that turns an engine-agnostic design from
+    the 3d-core domain lenses into real Babylon.js API calls. Kept separate from
+    3d-core so a web-only consumer never carries Unreal knowledge in its agent
+    catalog, and a third platform can be added later as a sibling file with zero
+    changes here.
+
+agents:
+  include:
+    - 3d-developer:babylonjs-specialist

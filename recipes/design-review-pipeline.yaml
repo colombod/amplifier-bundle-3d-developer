@@ -1,0 +1,338 @@
+# =============================================================================
+# design-review-pipeline — gate an existing 3D artifact through three cold critics
+# =============================================================================
+#
+# Takes an artifact that already exists (a design document, a diff, an
+# implementation, a path to any of those) and runs the bundle's three
+# adversarial critics against it, COLD and INDEPENDENT, then aggregates
+# worst-wins and stops for a human before any revision happens.
+#
+# This is the recipe form of the `3d-design-review` skill. Use the skill when
+# you want the review inline in a conversation; use this recipe when you want
+# the approval gate, the checkpointing and the resumable session.
+#
+# Usage:
+#   amplifier tool invoke recipes operation=execute \
+#     recipe_path=3d-developer:recipes/design-review-pipeline.yaml \
+#     context='{"artifact": "docs/designs/volume-render.md"}'
+#
+# Expected runtime: ~5-12 minutes depending on artifact size.
+#
+# -----------------------------------------------------------------------------
+# WHY THE schema_version: 2 HEADER IS REQUIRED, NOT OPTIONAL
+# -----------------------------------------------------------------------------
+# Without it, a step's `agent:` resolves from the CALLING SESSION's agent map.
+# This recipe would then run correctly only from a session that already happens
+# to mount the 3d-developer bundle, and from anywhere else it would either fail
+# with "Agent '3d-developer:perf-budget-critic' not found in configuration" or —
+# far worse — silently resolve some other agent that shares the name and return
+# a verdict nobody audited.
+#
+# With the header, agents resolve from the closure declared below and from
+# nowhere else. That closure is CLOSED-WORLD: an agent this recipe references
+# but does not declare is a preflight failure before step one runs, not a
+# surprise at minute nine. That property is the whole reason every namespaced
+# agent is listed under `required_agents` even though it looks redundant
+# against the `agent:` lines further down — the closure is what resolution
+# actually reads.
+# =============================================================================
+#
+# CHANGELOG
+#   v1.0.0 (2026-09-19):
+#     - NEW FEATURE: Initial recipe. Three cold critics, worst-wins
+#       aggregation, stage-level approval gate before revision.
+#
+# =============================================================================
+
+schema_version: 2
+
+dependencies:
+  # NOTE: pinned to @main because amplifier-bundle-3d-developer has no tags cut
+  # yet (v0.1.0 is unreleased). A branch pin means the closure can change under
+  # this recipe without the recipe changing. THIS MUST BE REPINNED TO A TAG OR
+  # SHA before anything outside this repo depends on it.
+  - source: "git+https://github.com/colombod/amplifier-bundle-3d-developer@main"
+    kind: bundle
+    required_agents:
+      - "3d-developer:perf-budget-critic"
+      - "3d-developer:visual-quality-critic"
+      - "3d-developer:correctness-critic"
+      # zen-architect does the synthesis work. No 3d-developer agent can do it:
+      # the three critics are explicitly forbidden from fixing anything (they
+      # return a judgment and nothing else), and the domain lenses design
+      # rather than aggregate. Rather than invent a "3d-synthesizer" that does
+      # not exist, this recipe uses a real foundation agent.
+      #
+      # It is declared HERE, under the 3d-developer entry, and NOT as a second
+      # `- source: amplifier-foundation` dependency. The 3d-developer bundle
+      # already pulls foundation in through its own `includes:`, so declaring
+      # foundation again makes two dependencies supply the same agent names and
+      # preflight fails hard:
+      #
+      #   AgentCollisionError: Agent name 'amplifier:amplifier-expert' is
+      #   supplied by more than one dependency ... agent name collisions are
+      #   never resolved by precedence.
+      #
+      # Declaring a transitively-supplied agent under the dependency it arrives
+      # through is correct, not a shortcut: provenance records `declared_by` as
+      # this entry and `supplied_by` as the foundation tree it was defined in.
+      - "foundation:zen-architect"
+
+name: "design-review-pipeline"
+description: "Run the three 3D critics cold against one artifact, aggregate worst-wins, gate on a human, then revise."
+version: "1.0.0"
+tags: ["3d", "review", "critics", "adversarial", "approval-gate"]
+
+context:
+  artifact:
+    type: string
+    required: true
+    description: >-
+      The thing under review: design text pasted inline, a diff, or a path to
+      either. Passed to all three critics verbatim and unsummarized.
+
+stages:
+  # ---------------------------------------------------------------------------
+  # STAGE 1 — Review, cold.
+  #
+  # THE COLDNESS RULE: no critic's prompt below contains any other critic's
+  # output. Not a summary, not a hint, not "the perf critic was worried about
+  # overdraw". Three verdicts reached independently are three pieces of
+  # evidence; three verdicts reached after the critics read each other are one
+  # verdict wearing a hat. If you edit these prompts, do not interpolate
+  # {{perf_review}}, {{visual_review}} or {{correctness_review}} into any of the
+  # other two. That single edit would destroy the only property this stage has.
+  #
+  # The recipe engine spawns every agent step as a fresh sub-session, so the
+  # isolation is structural and not merely prompt discipline. These three steps
+  # run SEQUENTIALLY (a step's `agent:` is a static string, so `foreach` +
+  # `parallel` cannot be used to fan out across three different agents). That
+  # costs wall-clock time and costs nothing in independence — which is the
+  # property that matters here.
+  # ---------------------------------------------------------------------------
+  - name: "review"
+    description: "Three adversarial critics, cold and independent, against the same artifact."
+    steps:
+      - id: "perf-review"
+        agent: "3d-developer:perf-budget-critic"
+        timeout: 900
+        prompt: |
+          Review the artifact below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          Use N/A — an abstention — if the artifact presents no performance
+          surface to review. N/A is not a blocker and must not be dressed up as
+          one. Then give your findings with evidence anchors, and for each
+          finding name the measurement that would confirm or refute it.
+
+          Do not fix anything. Do not rewrite the artifact.
+
+          --- ARTIFACT UNDER REVIEW ---
+          {{artifact}}
+          --- END ARTIFACT ---
+        output: "perf_review"
+
+      - id: "visual-review"
+        agent: "3d-developer:visual-quality-critic"
+        timeout: 900
+        prompt: |
+          Review the artifact below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          Report your observation basis explicitly — whether you are looking at
+          a running thing, a rendered image, or a described design you cannot
+          see. Keep legibility defects separate from art-direction taste, and
+          label which is which: taste is advisory and never blocks.
+
+          Do not fix anything. Do not rewrite the artifact.
+
+          --- ARTIFACT UNDER REVIEW ---
+          {{artifact}}
+          --- END ARTIFACT ---
+        output: "visual_review"
+
+      - id: "correctness-review"
+        agent: "3d-developer:correctness-critic"
+        timeout: 900
+        prompt: |
+          Review the artifact below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          Mark explicitly any defect that is SILENT — one that renders
+          plausibly while producing wrong values. That class is the reason you
+          are in this roster; nobody else will catch it.
+
+          Do not fix anything. Do not rewrite the artifact.
+
+          --- ARTIFACT UNDER REVIEW ---
+          {{artifact}}
+          --- END ARTIFACT ---
+        output: "correctness_review"
+
+      # Aggregation is a deterministic rule, not a judgment call. It is written
+      # as an agent step only because the verdicts arrive embedded in prose;
+      # the step is instructed to apply the rule, never to weigh it.
+      - id: "aggregate-verdicts"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        timeout: 600
+        prompt: |
+          You are aggregating three independent critic verdicts. You are NOT
+          reviewing the artifact yourself — your own opinion about the 3D work
+          is not evidence and does not belong in the output.
+
+          Apply these rules exactly. They are not guidance; they are the spec.
+
+          1. WORST-WINS. Any FAIL -> overall BLOCK. Otherwise any CONCERN ->
+             overall PASS-WITH-NOTES. Otherwise (all PASS / N/A) -> overall
+             PASS. Do not average. Do not soften one critic's FAIL because the
+             other two were content.
+          2. A critic that errored, did not return, or returned no parsable
+             VERDICT line makes the overall verdict INDETERMINATE — never PASS.
+             Say which critic and say it prominently.
+          3. N/A is an abstention, not a blocker. Keep FAIL and N/A visibly
+             distinguishable.
+          4. Anything the correctness critic marked SILENT goes at the very
+             top, whatever the verdict.
+          5. Attribute every claim to a named critic and quote at least one
+             verbatim line from each. No anonymous synthesis.
+          6. If two critics hold opposing positions on the SAME finding, record
+             it under "Unresolved disagreement" with both positions verbatim
+             and what the human has to decide. Do not pick a side.
+
+          Output in this shape:
+
+              Consulted: perf-budget-critic, visual-quality-critic, correctness-critic
+              Overall: BLOCK | PASS-WITH-NOTES | PASS | INDETERMINATE
+
+              ## Silent errors (if any)
+              ## perf-budget-critic — <verdict>
+              ## visual-quality-critic — <verdict>
+              ## correctness-critic — <verdict>
+              ## Unresolved disagreement (if any)
+
+          --- perf-budget-critic returned ---
+          {{perf_review}}
+
+          --- visual-quality-critic returned ---
+          {{visual_review}}
+
+          --- correctness-critic returned ---
+          {{correctness_review}}
+        output: "aggregate_verdict"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2 — Revision, behind a human gate.
+  #
+  # The gate is `when: before_stage` deliberately. An after_stage gate on the
+  # review stage would stop the same work, but this spelling says the true
+  # thing: denying means the revision NEVER RUNS. The question being asked is
+  # "may we do this at all", not "you have seen it, may we go on".
+  # ---------------------------------------------------------------------------
+  - name: "revision"
+    description: "Route the critics' findings back into a revised artifact. Human-gated."
+    approval:
+      required: true
+      when: "before_stage"
+      default: "deny"
+      timeout: 0
+      prompt: |
+        Three critics have reviewed the artifact, cold and independently.
+
+        ================= AGGREGATED VERDICT =================
+        {{aggregate_verdict}}
+
+        ================= perf-budget-critic (verbatim) =================
+        {{perf_review}}
+
+        ================= visual-quality-critic (verbatim) =================
+        {{visual_review}}
+
+        ================= correctness-critic (verbatim) =================
+        {{correctness_review}}
+
+        ======================================================
+
+        Approve to proceed to revision. Deny to stop here and keep the review
+        as the deliverable.
+
+        Deny if the overall verdict is INDETERMINATE — a critic did not return,
+        so this review is incomplete and revising against it would be revising
+        against a gap.
+
+    steps:
+      # One synthesizing step, not a fan-out. The bundle's doctrine is that a
+      # finding goes back to the lens that OWNS it — a label-overdraw perf
+      # finding belongs to label-callout-designer, not to whoever is nearest.
+      # A recipe step's `agent:` is a static string, so which owning lens to
+      # convene cannot be decided at run time from findings that do not exist
+      # yet. Rather than hard-wire a guess at ownership, this step revises what
+      # it can and emits an explicit routing table naming the lens that must
+      # take each remaining finding. That table is the handoff.
+      - id: "synthesize-revision"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        timeout: 900
+        prompt: |
+          Three critics reviewed the artifact below. Produce the revision.
+
+          Return exactly three sections:
+
+          ## 1. Revised artifact
+          The artifact with every finding you can responsibly address applied.
+          Preserve anything no critic objected to — do not take the opportunity
+          to redesign. If a finding cannot be addressed without a design
+          decision that is not yours to make, leave the artifact alone there
+          and say so in section 3.
+
+          ## 2. Finding-by-finding disposition
+          A table: finding | raising critic | ADDRESSED / DEFERRED / REJECTED |
+          why. Every finding from all three critics appears exactly once. A
+          rejected finding needs a reason stronger than "disagree".
+
+          ## 3. Routing table — findings this revision did not close
+          For each, name the ONE 3d-developer lens that owns it and must be
+          delegated to next. Choose from, and only from:
+            3d-developer:dataviz-strategist      — is 3D right at all, encoding channels
+            3d-developer:scene-architect         — scene graph, LOD, instancing, streaming
+            3d-developer:rendering-engineer      — frame budget, passes, culling
+            3d-developer:shading-artist          — materials, shaders, transparency
+            3d-developer:interaction-designer    — picking, selection, manipulation
+            3d-developer:camera-navigator        — framing, transitions, projection
+            3d-developer:postfx-artist           — fog, DOF, bloom, outlines, AA, tone mapping
+            3d-developer:label-callout-designer  — text, annotations, decluttering
+            3d-developer:animation-engineer      — motion over time, state transitions
+            3d-developer:particle-fx-artist      — smoke, fire, flow, fluid
+            3d-developer:babylonjs-specialist    — Babylon.js API specifics
+            3d-developer:unreal-specialist       — Unreal Engine API specifics
+          Do not invent a lens outside this list. If no lens owns it, say it is
+          a decision for the human and state the decision.
+
+          Anything the correctness critic marked SILENT is addressed first and
+          is never DEFERRED without an explicit reason.
+
+          --- ARTIFACT UNDER REVIEW ---
+          {{artifact}}
+          --- END ARTIFACT ---
+
+          --- AGGREGATED VERDICT ---
+          {{aggregate_verdict}}
+
+          --- perf-budget-critic (verbatim) ---
+          {{perf_review}}
+
+          --- visual-quality-critic (verbatim) ---
+          {{visual_review}}
+
+          --- correctness-critic (verbatim) ---
+          {{correctness_review}}
+        output: "final_output"

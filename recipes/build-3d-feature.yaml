@@ -1,0 +1,711 @@
+# =============================================================================
+# build-3d-feature — scope -> design -> review -> revise -> hand off to a platform
+# =============================================================================
+#
+# The full arc for a NEW 3D visualization feature. Scoping first (including the
+# right to say "this should not be 3D"), then the domain design work, then the
+# three adversarial critics cold, then revision, then an engine handoff — with
+# a human gate at each place where continuing costs real money.
+#
+# This is the recipe form of the `3d-build-loop` skill. Use the skill when you
+# want the loop inline and want to choose the lenses conversationally; use this
+# recipe when you want the gates, the checkpointing and a resumable session.
+#
+# Usage:
+#   amplifier tool invoke recipes operation=execute \
+#     recipe_path=3d-developer:recipes/build-3d-feature.yaml \
+#     context='{"request": "show 40k warehouse SKUs as a navigable 3D scatter",
+#               "data_shape": "40000 rows; x,y,z = bin coords; value = pick rate; 3 categoricals",
+#               "target_platform": "babylonjs",
+#               "frame_budget_ms": "16.6"}'
+#
+# Expected runtime: ~20-40 minutes across four stages, plus human wait at gates.
+#
+# -----------------------------------------------------------------------------
+# WHY THE schema_version: 2 HEADER IS REQUIRED, NOT OPTIONAL
+# -----------------------------------------------------------------------------
+# Without it, a step's `agent:` resolves from the CALLING SESSION's agent map,
+# so this recipe would work only from a session that already mounts the
+# 3d-developer bundle. Everywhere else it either dies with "Agent
+# '3d-developer:rendering-engineer' not found in configuration" or silently
+# resolves some other agent of the same name and returns a frame budget nobody
+# audited. The header makes the closure below the ONLY place agents resolve
+# from, and that closure is closed-world: an agent referenced but not declared
+# is a preflight failure before step one, not a surprise at minute thirty.
+# That is why every namespaced agent appears under `required_agents` even
+# though it also appears on an `agent:` line — the closure is what resolution
+# reads, and the `agent:` line is only a lookup into it.
+# =============================================================================
+#
+# CHANGELOG
+#   v1.0.0 (2026-09-19):
+#     - NEW FEATURE: Initial recipe. Four stages, two approval gates, fixed
+#       core design set, cold critics, conditional platform handoff.
+#
+# =============================================================================
+
+schema_version: 2
+
+dependencies:
+  # NOTE: pinned to @main because amplifier-bundle-3d-developer has no tags cut
+  # yet (v0.1.0 is unreleased). A branch pin means the closure can change under
+  # this recipe without the recipe changing. THIS MUST BE REPINNED TO A TAG OR
+  # SHA before anything outside this repo depends on it.
+  - source: "git+https://github.com/colombod/amplifier-bundle-3d-developer@main"
+    kind: bundle
+    required_agents:
+      - "3d-developer:dataviz-strategist"
+      - "3d-developer:scene-architect"
+      - "3d-developer:shading-artist"
+      - "3d-developer:camera-navigator"
+      - "3d-developer:rendering-engineer"
+      - "3d-developer:perf-budget-critic"
+      - "3d-developer:visual-quality-critic"
+      - "3d-developer:correctness-critic"
+      - "3d-developer:babylonjs-specialist"
+      - "3d-developer:unreal-specialist"
+      # zen-architect does aggregation and revision synthesis. No 3d-developer
+      # agent can: the critics are forbidden from fixing anything, and the
+      # domain lenses design rather than aggregate. Using a real foundation
+      # agent beats inventing a "3d-synthesizer" that does not exist.
+      #
+      # It is declared HERE, under the 3d-developer entry, and NOT as a second
+      # `- source: amplifier-foundation` dependency. The 3d-developer bundle
+      # already pulls foundation in through its own `includes:`, so declaring
+      # foundation again makes two dependencies supply the same agent names and
+      # preflight fails hard:
+      #
+      #   AgentCollisionError: Agent name 'amplifier:amplifier-expert' is
+      #   supplied by more than one dependency ... agent name collisions are
+      #   never resolved by precedence.
+      #
+      # Declaring a transitively-supplied agent under the dependency it arrives
+      # through is correct, not a shortcut: provenance records `declared_by` as
+      # this entry and `supplied_by` as the foundation tree it was defined in.
+      - "foundation:zen-architect"
+
+name: "build-3d-feature"
+description: "Scope, design, adversarially review, revise and hand off a new 3D visualization feature, with human gates."
+version: "1.0.0"
+tags: ["3d", "design", "review", "critics", "approval-gate", "platform-handoff"]
+
+context:
+  request:
+    type: string
+    required: true
+    description: "What the user actually asked for, in their words."
+
+  data_shape:
+    type: string
+    required: true
+    description: >-
+      What the data IS — row count, columns, types, ranges, cardinality. The
+      strategist cannot judge whether depth carries a real variable without it,
+      and a guess here corrupts every downstream lens.
+
+  target_platform:
+    type: string
+    default: "none"
+    enum: ["babylonjs", "unreal", "none"]
+    description: >-
+      Which engine handoff to run at the end. 'none' produces an
+      engine-agnostic design and skips stage 4's handoff steps entirely.
+
+  frame_budget_ms:
+    type: string
+    default: "16.6"
+    description: "Per-frame budget in milliseconds on the target device. 16.6 = 60fps."
+
+stages:
+  # ---------------------------------------------------------------------------
+  # STAGE 1 — Scope, and be willing to say no.
+  #
+  # dataviz-strategist is the ONLY lens permitted to conclude "this should be
+  # 2D", and it is required to say so when true. The gate below is what gives
+  # that conclusion teeth: it is `after_stage`, so the human reads the verdict
+  # and denying stops every stage that follows. Without the gate, a "this
+  # should be a 2D chart" verdict would be a paragraph the pipeline politely
+  # noted on its way to building the 3D thing anyway.
+  # ---------------------------------------------------------------------------
+  - name: "scoping"
+    description: "Should this be 3D at all, and if so, what is encoded in what?"
+    approval:
+      required: true
+      default: "deny"
+      timeout: 0
+      prompt: |
+        ================= SCOPING VERDICT =================
+        {{scoping}}
+        ===================================================
+
+        Approve to proceed to the domain design work.
+
+        DENY IF the strategist concluded this should be 2D, or hybrid-with-2D.
+        That verdict is the point of this stage — the pipeline is built to be
+        stopped here, and proceeding anyway means building a 3D thing because
+        a 3D thing was asked for rather than because depth carries data.
+
+        Deny also if the encoding table is missing or vague: every downstream
+        lens is told not to break it, so an unclear table is an unenforceable
+        constraint.
+    steps:
+      - id: "scope"
+        agent: "3d-developer:dataviz-strategist"
+        timeout: 900
+        prompt: |
+          A 3D visualization has been requested. Decide whether it should be
+          3D at all, and if so, what is encoded in what.
+
+          REQUEST:
+          {{request}}
+
+          DATA SHAPE:
+          {{data_shape}}
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame on the target device.
+
+          Return:
+          1. A verdict line: `SCOPE: 3D` / `SCOPE: HYBRID` / `SCOPE: 2D`.
+             Say 2D if the evidence says 2D. You are the only lens allowed to,
+             and you are required to when it is true.
+          2. Your reasoning — specifically, whether depth carries a real data
+             variable or is decoration.
+          3. If 3D or HYBRID: the ENCODING TABLE. One row per data variable,
+             naming the visual channel it occupies. Downstream lenses are told
+             this table is the thing they must not break, so it has to be
+             precise enough to be violated detectably.
+          4. Any perceptual hazard the design will have to defend against
+             (occlusion, projection distortion, unreadable magnitude comparison).
+        output: "scoping"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2 — The domain design work.
+  #
+  # WHY THIS SET IS FIXED, AND HOW TO EXTEND IT
+  #
+  # A recipe step's `agent:` is a STATIC STRING. It cannot be computed from the
+  # request at run time, and a `foreach` cannot fan one step across ten
+  # different agents. So the honest options are: a fixed set chosen for
+  # defensibility, or ten steps most of which are wasted sub-sessions returning
+  # designs nobody needs and somebody must still reconcile. This recipe takes
+  # the first.
+  #
+  # The fixed core is the set of questions EVERY 3D data visualization has to
+  # answer, whatever it is showing:
+  #   scene-architect     — what is in the scene and how is it structured
+  #   shading-artist      — what do the surfaces look like
+  #   camera-navigator    — how does the viewer move through it
+  #   rendering-engineer  — what does all of that cost per frame
+  #
+  # rendering-engineer runs LAST and receives the other three, because it owns
+  # the TOTAL budget the others are spending from. Ordering it first would make
+  # it budget a scene that did not exist yet.
+  #
+  # The six lenses NOT in the core — interaction-designer, postfx-artist,
+  # label-callout-designer, animation-engineer, particle-fx-artist, and
+  # dataviz-strategist (already spent in stage 1) — are request-dependent. A
+  # static scatter plot needs none of them; an animated annotated flow
+  # visualization needs four.
+  #
+  # TO EXTEND: add a step to this stage BEFORE `budget-and-reconcile`, add its
+  # agent to `required_agents` in the dependencies block above (the closure is
+  # closed-world — omitting it is a preflight failure, which is the correct
+  # loud outcome), and add its output variable to the `budget-and-reconcile`
+  # prompt so the total budget actually includes what it just spent. Forgetting
+  # that third step is the failure mode worth watching for: the design gains a
+  # cost the budget never sees.
+  #
+  # If you find yourself editing this list per request, you want the
+  # `3d-build-loop` skill instead — it chooses lenses conversationally, which
+  # is exactly the thing a static recipe cannot do.
+  # ---------------------------------------------------------------------------
+  - name: "design"
+    description: "Fixed core design set: structure, appearance, viewpoint, then total budget."
+    steps:
+      - id: "design-scene"
+        agent: "3d-developer:scene-architect"
+        timeout: 900
+        prompt: |
+          Design the scene structure for this visualization.
+
+          REQUEST:
+          {{request}}
+
+          DATA SHAPE:
+          {{data_shape}}
+
+          SCOPING VERDICT AND ENCODING TABLE — do not break this table:
+          {{scoping}}
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          Cover scene graph organisation, LOD strategy, instancing/batching,
+          spatial partitioning and streaming if the data volume warrants it.
+
+          End with an explicit FRAME COST CLAIM: the per-frame millisecond cost
+          your design adds, the device assumption behind it, and what you are
+          uncertain about. An unstated cost is a cost somebody else has to
+          discover with a profiler.
+        output: "scene_design"
+
+      - id: "design-shading"
+        agent: "3d-developer:shading-artist"
+        timeout: 900
+        prompt: |
+          Design the materials and shading for this visualization.
+
+          REQUEST:
+          {{request}}
+
+          DATA SHAPE:
+          {{data_shape}}
+
+          SCOPING VERDICT AND ENCODING TABLE — do not break this table. Where
+          the table assigns a data variable to a surface-appearance channel,
+          your material design IS that encoding:
+          {{scoping}}
+
+          SCENE STRUCTURE already designed:
+          {{scene_design}}
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          Cover material model, colour handling and colour space, transparency
+          and its sort order, and how each encoded variable maps to appearance.
+
+          End with an explicit FRAME COST CLAIM: per-frame millisecond cost,
+          device assumption, and your uncertainty.
+        output: "shading_design"
+
+      - id: "design-camera"
+        agent: "3d-developer:camera-navigator"
+        timeout: 900
+        prompt: |
+          Design the camera and navigation for this visualization.
+
+          REQUEST:
+          {{request}}
+
+          SCOPING VERDICT AND ENCODING TABLE — do not break this table. Note
+          in particular any perceptual hazard it flagged; projection choice is
+          usually the lever that makes those hazards better or worse:
+          {{scoping}}
+
+          SCENE STRUCTURE already designed:
+          {{scene_design}}
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          Cover projection (and justify orthographic vs perspective against the
+          encoding table, not against taste), default framing, how the viewer
+          moves, transitions between views, and what stops them getting lost.
+
+          End with an explicit FRAME COST CLAIM: per-frame millisecond cost,
+          device assumption, and your uncertainty.
+        output: "camera_design"
+
+      # Runs last and owns the TOTAL budget. This is the step where the job is
+      # actually decided: three lenses have each claimed a cost against the
+      # same budget, and somebody has to do the arithmetic out loud.
+      - id: "budget-and-reconcile"
+        agent: "3d-developer:rendering-engineer"
+        timeout: 900
+        prompt: |
+          Three domain lenses have each designed against the same frame budget
+          and each claimed a per-frame cost. You own the TOTAL. Produce the
+          reconciled render design and the budget that governs it.
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          SCOPING VERDICT AND ENCODING TABLE — the constraint none of this may
+          break:
+          {{scoping}}
+
+          SCENE DESIGN (scene-architect):
+          {{scene_design}}
+
+          SHADING DESIGN (shading-artist):
+          {{shading_design}}
+
+          CAMERA DESIGN (camera-navigator):
+          {{camera_design}}
+
+          Return:
+          1. THE ARITHMETIC, VISIBLE. Each lens's claimed cost, the passes and
+             culling you are adding, the total, and the headroom or overrun
+             against {{frame_budget_ms}} ms. Show the sum; do not assert it.
+          2. The reconciled frame: pass order, render targets, culling
+             strategy, where the time actually goes.
+          3. MECHANICAL COLLISIONS you resolved — two lenses asking for the
+             same render target, a sort order that two designs both depend on
+             differently. Resolve these; they are yours.
+          4. VALUE CONFLICTS you did NOT resolve. If the total overruns, name
+             the tradeoff and both positions verbatim rather than quietly
+             cutting whichever lens spoke last. A genuine conflict between two
+             designs is a decision for the human, not an averaging exercise.
+          5. Your own FRAME COST CLAIM for the passes you added, on top of the
+             three you were given.
+        output: "reconciled_design"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3 — Review, cold.
+  #
+  # THE COLDNESS RULE: no critic's prompt below contains any other critic's
+  # output. If you edit these prompts, do not interpolate {{perf_review}},
+  # {{visual_review}} or {{correctness_review}} into either of the other two.
+  # That one edit turns three pieces of evidence into one verdict wearing a
+  # hat, and nothing downstream would notice.
+  #
+  # Each agent step is a fresh sub-session, so the isolation is structural
+  # rather than a matter of prompt discipline. They run sequentially because a
+  # step's `agent:` is static and cannot be fanned out with `foreach`; that
+  # costs wall-clock and costs nothing in independence.
+  #
+  # All three review the SAME artifact: the full design package, reconciled
+  # budget included.
+  # ---------------------------------------------------------------------------
+  - name: "review"
+    description: "Three adversarial critics, cold and independent, against the whole design package."
+    approval:
+      required: true
+      default: "deny"
+      timeout: 0
+      prompt: |
+        ================= AGGREGATED VERDICT =================
+        {{aggregate_verdict}}
+
+        ================= perf-budget-critic (verbatim) =================
+        {{perf_review}}
+
+        ================= visual-quality-critic (verbatim) =================
+        {{visual_review}}
+
+        ================= correctness-critic (verbatim) =================
+        {{correctness_review}}
+
+        ======================================================
+
+        Approve to proceed to revision and platform handoff
+        (target_platform = {{target_platform}}).
+
+        DENY IF the overall verdict is INDETERMINATE — a critic did not return,
+        so this review has a hole in it and revising against it means revising
+        against a gap.
+
+        DENY IF a FAIL rests on a design decision that is yours to make rather
+        than the pipeline's. Revision will otherwise make that decision for
+        you, quietly and well.
+    steps:
+      - id: "perf-review"
+        agent: "3d-developer:perf-budget-critic"
+        timeout: 900
+        prompt: |
+          Review the design package below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          The package claims a total per-frame cost against a budget of
+          {{frame_budget_ms}} ms. Audit the claim; do not accept the
+          arithmetic because it was shown. For each finding, give evidence
+          anchors and name the measurement that would confirm or refute it.
+
+          Do not fix anything. Do not rewrite the design.
+
+          --- DESIGN PACKAGE UNDER REVIEW ---
+          ## Scoping and encoding
+          {{scoping}}
+
+          ## Scene design
+          {{scene_design}}
+
+          ## Shading design
+          {{shading_design}}
+
+          ## Camera design
+          {{camera_design}}
+
+          ## Reconciled render design and total budget
+          {{reconciled_design}}
+          --- END DESIGN PACKAGE ---
+        output: "perf_review"
+
+      - id: "visual-review"
+        agent: "3d-developer:visual-quality-critic"
+        timeout: 900
+        prompt: |
+          Review the design package below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          Report your observation basis explicitly — this is a DESCRIBED
+          design, not a running thing, and you cannot see it. Say what that
+          limits. Keep legibility defects separate from art-direction taste and
+          label which is which: taste is advisory and never blocks.
+
+          Do not fix anything. Do not rewrite the design.
+
+          --- DESIGN PACKAGE UNDER REVIEW ---
+          ## Scoping and encoding
+          {{scoping}}
+
+          ## Scene design
+          {{scene_design}}
+
+          ## Shading design
+          {{shading_design}}
+
+          ## Camera design
+          {{camera_design}}
+
+          ## Reconciled render design and total budget
+          {{reconciled_design}}
+          --- END DESIGN PACKAGE ---
+        output: "visual_review"
+
+      - id: "correctness-review"
+        agent: "3d-developer:correctness-critic"
+        timeout: 900
+        prompt: |
+          Review the design package below and return your verdict.
+
+          Begin your response with a single line in exactly this form:
+
+              VERDICT: PASS | CONCERN | FAIL | N/A
+
+          Mark explicitly any defect that is SILENT — one that renders
+          plausibly while producing wrong values. Colour space, alpha handling
+          and depth precision are where these hide, and nobody else in this
+          roster is looking for them.
+
+          Do not fix anything. Do not rewrite the design.
+
+          --- DESIGN PACKAGE UNDER REVIEW ---
+          ## Scoping and encoding
+          {{scoping}}
+
+          ## Scene design
+          {{scene_design}}
+
+          ## Shading design
+          {{shading_design}}
+
+          ## Camera design
+          {{camera_design}}
+
+          ## Reconciled render design and total budget
+          {{reconciled_design}}
+          --- END DESIGN PACKAGE ---
+        output: "correctness_review"
+
+      # Aggregation is a deterministic rule, not a judgment call. It runs as an
+      # agent step only because the verdicts arrive embedded in prose.
+      - id: "aggregate-verdicts"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        timeout: 600
+        prompt: |
+          You are aggregating three independent critic verdicts. You are NOT
+          reviewing the design yourself — your own opinion about the 3D work is
+          not evidence and does not belong in the output.
+
+          Apply these rules exactly. They are not guidance; they are the spec.
+
+          1. WORST-WINS. Any FAIL -> overall BLOCK. Otherwise any CONCERN ->
+             overall PASS-WITH-NOTES. Otherwise (all PASS / N/A) -> overall
+             PASS. Do not average. Do not soften one critic's FAIL because the
+             other two were content.
+          2. A critic that errored, did not return, or returned no parsable
+             VERDICT line makes the overall verdict INDETERMINATE — never PASS.
+             Say which critic and say it prominently.
+          3. N/A is an abstention, not a blocker. Keep FAIL and N/A visibly
+             distinguishable.
+          4. Anything the correctness critic marked SILENT goes at the very
+             top, whatever the verdict.
+          5. Attribute every claim to a named critic and quote at least one
+             verbatim line from each. No anonymous synthesis.
+          6. If two critics hold opposing positions on the SAME finding, record
+             it under "Unresolved disagreement" with both positions verbatim
+             and what the human has to decide. Do not pick a side.
+
+          Output in this shape:
+
+              Consulted: perf-budget-critic, visual-quality-critic, correctness-critic
+              Overall: BLOCK | PASS-WITH-NOTES | PASS | INDETERMINATE
+
+              ## Silent errors (if any)
+              ## perf-budget-critic — <verdict>
+              ## visual-quality-critic — <verdict>
+              ## correctness-critic — <verdict>
+              ## Unresolved disagreement (if any)
+
+          --- perf-budget-critic returned ---
+          {{perf_review}}
+
+          --- visual-quality-critic returned ---
+          {{visual_review}}
+
+          --- correctness-critic returned ---
+          {{correctness_review}}
+        output: "aggregate_verdict"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 4 — Revise, then hand off to a platform.
+  #
+  # The revision step lives here rather than in its own stage so that ONE gate
+  # — the review gate above — stops both the revision and the handoff. A denied
+  # review should not produce a revised design nobody asked for.
+  #
+  # The handoff is deliberately LAST. The domain lenses are engine-agnostic on
+  # purpose; designing against an engine's conveniences earlier is how a design
+  # ends up shaped by whatever the engine made easy rather than by the data.
+  #
+  # Both handoff steps are conditional on `target_platform`. Note that
+  # `condition:` is a STEP field — a stage has no condition, and declaring one
+  # is a parse error — so the two engine steps carry it individually. With
+  # target_platform = 'none' both skip and their output variables stay
+  # undefined, which is why nothing downstream references them.
+  # ---------------------------------------------------------------------------
+  - name: "revision-and-handoff"
+    description: "Route critic findings into a revised design, then hand off to the target engine if one was named."
+    steps:
+      # One synthesizing step, not a fan-out. Bundle doctrine is that a finding
+      # goes back to the lens that OWNS it — a perf finding about shading
+      # overdraw belongs to shading-artist, not to whoever is nearest. A step's
+      # `agent:` is static, so which owning lens to convene cannot be decided
+      # from findings that do not exist until run time. This step revises what
+      # it responsibly can and emits an explicit routing table for the rest.
+      - id: "synthesize-revision"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        timeout: 900
+        prompt: |
+          Three critics reviewed the design package below. Produce the revision.
+
+          Return exactly three sections:
+
+          ## 1. Revised design package
+          The package with every finding you can responsibly address applied,
+          section by section (scoping stays fixed — it was human-approved).
+          Preserve anything no critic objected to; do not take the opportunity
+          to redesign. Keep the total frame-cost arithmetic visible and update
+          it to match whatever you changed. If a finding cannot be addressed
+          without a design decision that is not yours to make, leave it and say
+          so in section 3.
+
+          ## 2. Finding-by-finding disposition
+          A table: finding | raising critic | ADDRESSED / DEFERRED / REJECTED |
+          why. Every finding from all three critics appears exactly once. A
+          rejected finding needs a reason stronger than "disagree".
+
+          ## 3. Routing table — findings this revision did not close
+          For each, name the ONE 3d-developer lens that owns it and must be
+          delegated to next. Choose from, and only from:
+            3d-developer:dataviz-strategist      — is 3D right at all, encoding channels
+            3d-developer:scene-architect         — scene graph, LOD, instancing, streaming
+            3d-developer:rendering-engineer      — frame budget, passes, culling
+            3d-developer:shading-artist          — materials, shaders, transparency
+            3d-developer:interaction-designer    — picking, selection, manipulation
+            3d-developer:camera-navigator        — framing, transitions, projection
+            3d-developer:postfx-artist           — fog, DOF, bloom, outlines, AA, tone mapping
+            3d-developer:label-callout-designer  — text, annotations, decluttering
+            3d-developer:animation-engineer      — motion over time, state transitions
+            3d-developer:particle-fx-artist      — smoke, fire, flow, fluid
+            3d-developer:babylonjs-specialist    — Babylon.js API specifics
+            3d-developer:unreal-specialist       — Unreal Engine API specifics
+          Do not invent a lens outside this list. If no lens owns it, say it is
+          a decision for the human and state the decision.
+
+          Anything the correctness critic marked SILENT is addressed first and
+          is never DEFERRED without an explicit reason.
+
+          --- DESIGN PACKAGE UNDER REVIEW ---
+          ## Scoping and encoding
+          {{scoping}}
+
+          ## Scene design
+          {{scene_design}}
+
+          ## Shading design
+          {{shading_design}}
+
+          ## Camera design
+          {{camera_design}}
+
+          ## Reconciled render design and total budget
+          {{reconciled_design}}
+          --- END DESIGN PACKAGE ---
+
+          --- AGGREGATED VERDICT ---
+          {{aggregate_verdict}}
+
+          --- perf-budget-critic (verbatim) ---
+          {{perf_review}}
+
+          --- visual-quality-critic (verbatim) ---
+          {{visual_review}}
+
+          --- correctness-critic (verbatim) ---
+          {{correctness_review}}
+        # Named `final_output` so the tool result always carries the revised
+        # design. The handoff steps below are conditional and may not run; if
+        # one of them owned the final output, a 'none' run would return the
+        # bare list of context keys instead of the thing that was built.
+        output: "final_output"
+
+      - id: "handoff-babylonjs"
+        condition: "{{target_platform}} == 'babylonjs'"
+        agent: "3d-developer:babylonjs-specialist"
+        timeout: 900
+        prompt: |
+          Implement this reviewed, revised 3D design in Babylon.js.
+
+          The design is engine-agnostic by construction. Your job is the
+          API-level implementation, not a redesign: where Babylon makes
+          something awkward, say so explicitly and name the cost, rather than
+          quietly reshaping the design around what the engine made easy.
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          Flag any place where the design's frame-cost claim does not survive
+          contact with what Babylon actually does — that gap is the most
+          valuable thing you can return.
+
+          --- REVISED DESIGN PACKAGE ---
+          {{final_output}}
+          --- END ---
+
+          --- CRITIC VERDICT THIS DESIGN CARRIES ---
+          {{aggregate_verdict}}
+          --- END ---
+        output: "babylonjs_implementation"
+
+      - id: "handoff-unreal"
+        condition: "{{target_platform}} == 'unreal'"
+        agent: "3d-developer:unreal-specialist"
+        timeout: 900
+        prompt: |
+          Implement this reviewed, revised 3D design in Unreal Engine.
+
+          The design is engine-agnostic by construction. Your job is the
+          API-level implementation, not a redesign: where Unreal makes
+          something awkward, say so explicitly and name the cost, rather than
+          quietly reshaping the design around what the engine made easy.
+
+          FRAME BUDGET: {{frame_budget_ms}} ms per frame.
+
+          Flag any place where the design's frame-cost claim does not survive
+          contact with what Unreal actually does — that gap is the most
+          valuable thing you can return.
+
+          --- REVISED DESIGN PACKAGE ---
+          {{final_output}}
+          --- END ---
+
+          --- CRITIC VERDICT THIS DESIGN CARRIES ---
+          {{aggregate_verdict}}
+          --- END ---
+        output: "unreal_implementation"

@@ -1,0 +1,12 @@
+bundle:
+  name: 3d-developer-babylonjs
+  version: 0.1.0
+  description: >
+    The 3D visualization bench pre-composed for web work: foundation + the ten
+    engine-agnostic domain lenses + the three critics + the Babylon.js
+    specialist. No Unreal knowledge is loaded.
+
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-foundation@main
+  - bundle: 3d-developer:behaviors/3d-core
+  - bundle: 3d-developer:behaviors/platform-babylonjs
