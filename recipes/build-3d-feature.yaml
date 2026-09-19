@@ -13,7 +13,7 @@
 #
 # Usage:
 #   amplifier tool invoke recipes operation=execute \
-#     recipe_path=3d-developer:recipes/build-3d-feature.yaml \
+#     recipe_path=@3d-developer:recipes/build-3d-feature.yaml \
 #     context='{"request": "show 40k warehouse SKUs as a navigable 3D scatter",
 #               "data_shape": "40000 rows; x,y,z = bin coords; value = pick rate; 3 categoricals",
 #               "target_platform": "babylonjs",

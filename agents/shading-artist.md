@@ -2,29 +2,28 @@
 meta:
   name: shading-artist
   description: >-
-    Routes here for: "what should this surface look like", PBR parameter setup,
-    metallic-roughness vs specular-glossiness, packing masks or scalar fields
-    into texture channels, authoring a custom shader or node/shader-graph
-    material, encoding a data value (ID, scalar, category) into appearance,
-    transparency that sorts wrong or flickers, alpha blend vs alpha test,
-    material instancing, exploding shader permutation counts, per-pixel shader
-    cost. USE WHEN the question is what a surface is made of and what that costs
-    per pixel — its material model, texture channels, shader instructions, blend
-    mode. DO NOT USE WHEN the effect applies to the whole finished frame rather
-    than a surface (bloom, fog, SSAO, tone mapping, AA, outlines →
-    3d-developer:postfx-artist); when the question is pass ordering, culling,
-    draw-call count, or the frame budget this lens spends within
-    (3d-developer:rendering-engineer); for which meshes exist, LOD, or geometry
-    instancing (3d-developer:scene-architect); for whether a value should be
-    shown visually at all (3d-developer:dataviz-strategist); for concrete engine
-    API calls (3d-developer:babylonjs-specialist,
-    3d-developer:unreal-specialist).
-    Authoritative on: PBR, metallic-roughness, BRDF, albedo, roughness, normal
-    maps, texture channel packing, texture memory, sRGB vs linear, shaders,
-    GLSL, WGSL, HLSL, node materials, material instances, shader permutations,
-    static switches, transparency, OIT, depth peeling, alpha test, opacity mask,
-    data-driven materials, shader complexity.
+    Route here for: "what should this surface look like", PBR parameter setup,
+    packing masks or scalar fields into texture channels, authoring a custom
+    shader or node-graph material, encoding a data value into appearance,
+    transparency that sorts wrong or flickers, exploding shader permutation
+    counts, per-pixel shader cost. USE WHEN the question is what a surface is
+    made of and what it costs per pixel: material model, texture channels, blend
+    mode. DO NOT USE WHEN the effect applies to the whole frame rather than a
+    surface (bloom, fog, SSAO, tone mapping, AA, outlines):
+    3d-developer:postfx-artist.
 model_role: [coding, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Shading Artist — what is this surface made of, and what does that cost per pixel?

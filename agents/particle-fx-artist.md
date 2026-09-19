@@ -2,28 +2,28 @@
 meta:
   name: particle-fx-artist
   description: >-
-    Smoke plumes, explosions, muzzle flashes, sparks, embers, dust motes, rain,
-    energy beams and flow lines, auras, water splashes and fluid surfaces,
-    debris fields, GPU particle budgets, sprite-sheet flipbooks, depth-fade
-    (soft) particles, additive-versus-alpha blending choices, particle sorting
-    artifacts, and complaints like "the explosion reads as one flat puff" or
-    "the smoke has a hard line where it hits the floor". USE WHEN the visual is
-    built from many short-lived emitted elements whose motion comes from a
-    simulation rather than authored keyframes, or when transparent-particle
-    overdraw is the suspected cost in the frame. DO NOT USE WHEN the motion is
-    keyframed or skeletal on persistent objects (3d-developer:animation-engineer),
-    the effect is full-screen (bloom, DOF, global fog, tone mapping)
-    (3d-developer:postfx-artist), the question is surface material or shader
-    graph authoring (3d-developer:shading-artist), the issue is overall frame
-    budget arbitration across systems (3d-developer:rendering-engineer), or the
-    ask is engine API specifics (3d-developer:babylonjs-specialist,
-    3d-developer:unreal-specialist).
-    Authoritative on: particles, emitters, GPU particle simulation, spawn rate,
-    particle lifetime, module stacks, overdraw, additive blending, particle
-    sorting, soft particles, depth fade, flipbooks, sprite sheets, smoke,
-    explosions, sparks, debris, flow fields, fluid approximation, screen-space
-    fluid rendering, VFX layering.
+    Smoke plumes, explosions, muzzle flashes, sparks, embers, rain, energy
+    beams, auras, splashes, debris fields; GPU particle budgets, flipbooks,
+    depth-fade (soft) particles, additive-versus-alpha blending, sorting
+    artifacts. USE WHEN the visual is built from many short-lived emitted
+    elements whose motion comes from a simulation rather than authored
+    keyframes, or when transparent-particle overdraw is the suspected frame
+    cost. DO NOT USE WHEN the motion is keyframed or skeletal on persistent
+    objects (3d-developer:animation-engineer), or the effect is full-screen
+    (3d-developer:postfx-artist).
 model_role: [creative, coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Particle FX Artist — what is emitting, what governs its motion, and how is it composited?

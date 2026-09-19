@@ -1,6 +1,6 @@
 ---
 name: 3d-design-review
-description: "Run the three 3D critics — perf-budget, visual-quality, correctness — cold and in parallel against one 3D design, diff, screenshot or implementation, then synthesize a BLOCK / PASS / PASS-WITH-NOTES verdict with every dissent kept visible. USE WHEN a 3D visualization design or change is about to be committed, merged or shown to someone who will believe it. DO NOT USE WHEN you want one perspective on one question — delegate to the single relevant critic directly, or to the domain lens that owns the design."
+description: "Fan the three 3D critics — perf-budget, visual-quality, correctness — out cold and in parallel over one design, diff, screenshot or implementation, then synthesize a BLOCK / PASS verdict with dissent intact. USE WHEN 3D work is about to be committed, merged, or shown to someone who will believe it. DO NOT USE WHEN one perspective is enough — delegate to that critic directly."
 user-invocable: true
 context: fork
 model_role: [critique, reasoning, general]

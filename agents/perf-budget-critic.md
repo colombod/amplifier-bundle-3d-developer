@@ -2,28 +2,27 @@
 meta:
   name: perf-budget-critic
   description: >-
-    A design, diff or implementation is finished and someone must decide whether
-    it will hold frame time; a change adds a render pass, post effect, shadow
-    cascade or particle system and the per-frame cost is unstated; a written
-    budget must be audited against what was actually built; "it should be fine
-    on the target device" with no measurement behind it; a claimed optimisation
-    needs its evidence checked before it is believed; a reviewer is needed who
-    has not been told what anyone else concluded. USE WHEN an existing artifact
-    needs a performance verdict with evidence anchors and, per finding, the
-    named measurement that would confirm or refute it. DO NOT USE WHEN the job
-    is to design the frame or write the budget in the first place
-    (3d-developer:rendering-engineer); when scene structure such as LOD,
-    partitioning or streaming is being designed
-    (3d-developer:scene-architect); when the question is whether it looks right
-    (3d-developer:visual-quality-critic); when it is colour space, alpha or
-    depth-precision correctness (3d-developer:correctness-critic); or when
-    engine API specifics are needed (3d-developer:babylonjs-specialist,
-    3d-developer:unreal-specialist). Authoritative on: performance review,
-    frame-cost audit, profiler selection, RenderDoc, PIX, Unreal Insights, stat
-    commands, GPU counters, CPU-bound versus GPU-bound determination, rendering
-    anti-patterns, evidence anchors, falsifiable findings, PASS CONCERN FAIL
-    verdicts.
+    A finished design, diff or implementation must be judged on whether it holds frame
+    time; a render pass, post effect or shadow cascade is added with per-frame cost
+    unstated; "it should be fine on the target device", unmeasured. USE WHEN an existing
+    artifact needs a performance verdict with evidence anchors and the measurement that
+    would confirm or refute each finding. DO NOT USE WHEN the frame or budget must be
+    designed, not audited (3d-developer:rendering-engineer); the question is legibility
+    (3d-developer:visual-quality-critic) or numerical correctness
+    (3d-developer:correctness-critic).
 model_role: [critique, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Performance budget critic — will this hold frame time, and what is the evidence?

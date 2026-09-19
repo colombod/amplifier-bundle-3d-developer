@@ -1,6 +1,6 @@
 ---
 name: 3d-build-loop
-description: "Drive a whole 3D visualization feature from ask to reviewed design IN THIS SESSION — scope it, fan the relevant domain lenses out in parallel, reconcile their conflicts, run the three critics cold, then revise until the critics stop finding new things. USE WHEN a 3D visualization request spans more than one concern (scene plus labels plus effects, say) and you need the domains reconciled rather than answered one at a time. DO NOT USE WHEN the question belongs to exactly one lens — delegate to that lens directly — or when the artifact already exists and only needs judging, which is 3d-design-review."
+description: "Drive a 3D visualization feature from ask to reviewed design in THIS session: scope it, fan the relevant domain lenses out in parallel, reconcile their colliding frame-cost claims, run the critics cold, revise to convergence. USE WHEN the request spans more than one concern — scene plus labels plus effects — and the domains must be reconciled, not answered one at a time. DO NOT USE WHEN one lens owns it, or the artifact exists and only needs judging (3d-design-review)."
 user-invocable: true
 ---
 

@@ -2,32 +2,27 @@
 meta:
   name: babylonjs-specialist
   description: >-
-    "Which Babylon.js class does this design map to"; turning on bloom, DOF or
-    FXAA via `DefaultRenderingPipeline`; choosing `InstancedMesh` versus thin
-    instances; picking hundreds of thousands of meshes without stalling the main
-    thread; what `scene.useOrderIndependentTransparency` costs; whether a feature
-    exists on the WebGL2 backend or only on WebGPU; what a GLB download plus
-    decode costs before first frame; device pixel ratio multiplying fill rate; a
-    `PBRMaterial` versus `NodeMaterial` versus `ShaderMaterial` decision; a
-    GLSL-versus-WGSL question. USE WHEN the answer must resolve to named
-    Babylon.js classes, properties and observables, and to what those cost in a
-    browser on a GPU you do not control. DO NOT USE WHEN the engine-agnostic
-    design has not been decided yet — route to the owning lens first
-    (`3d-developer:scene-architect`, `3d-developer:rendering-engineer`,
-    `3d-developer:shading-artist`, `3d-developer:interaction-designer`,
-    `3d-developer:camera-navigator`, `3d-developer:postfx-artist`,
-    `3d-developer:label-callout-designer`, `3d-developer:animation-engineer`,
-    `3d-developer:particle-fx-artist`); when the question is whether to use 3D at
-    all (`3d-developer:dataviz-strategist`); when a finished design needs
-    auditing (`3d-developer:perf-budget-critic`,
-    `3d-developer:visual-quality-critic`, `3d-developer:correctness-critic`); or
-    when the target engine is Unreal (`3d-developer:unreal-specialist`).
-    Authoritative on: Babylon.js, WebGL2, WebGPU, WGSL, GLSL, glTF, GLB,
-    DefaultRenderingPipeline, PBRMaterial, NodeMaterial, ShaderMaterial,
-    TransformNode, AssetContainer, thin instances, GPUPicker, ArcRotateCamera,
-    AdvancedDynamicTexture, AnimationGroup, GPUParticleSystem, device pixel
-    ratio, main thread, browser frame budget.
+    "Which Babylon.js class does this design map to": bloom, DOF or FXAA via
+    DefaultRenderingPipeline; InstancedMesh versus thin instances; picking huge scenes
+    without stalling the main thread; whether a feature exists on WebGL2 or only WebGPU;
+    GLB download and decode before first frame; PBRMaterial versus NodeMaterial. USE
+    WHEN an engine-agnostic design exists and the answer must resolve to named
+    Babylon.js classes and what they cost in a browser. DO NOT USE WHEN that design is
+    unsettled - route to the owning domain lens first - or when the engine is Unreal
+    (3d-developer:unreal-specialist).
 model_role: [coding, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Babylon.js specialist — the actual construct, and what it costs in a browser

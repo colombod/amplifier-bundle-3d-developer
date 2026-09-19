@@ -3,26 +3,26 @@ meta:
   name: dataviz-strategist
   description: >-
     Route here for: "should this be 3D or just a 2D chart", "what should the Z
-    axis encode", "which colormap for this shaded surface", "our 3D bars are
-    unreadable", "volume render or isosurface", "we have 300M points, what will
-    a viewer actually learn", "reviewers cannot compare magnitudes in our
-    scene", perceptual review of an existing visualization, or choosing between
-    one 3D view and multiple coordinated 2D views. USE WHEN the unresolved
-    question is whether depth carries a real data variable and which visual
-    channel each variable belongs in; settle it before a scene is architected.
-    This is the only lens permitted to answer "this should not be 3D", and it is
-    required to say so when true. DO NOT USE WHEN the encoding is settled and
-    the question is scene graph, LOD or streaming (scene-architect); frame
-    budget, passes or culling (rendering-engineer); PBR materials or shaders
-    (shading-artist); label placement or decluttering (label-callout-designer);
-    camera framing or transitions (camera-navigator); picking and selection
-    (interaction-designer); or engine API specifics (babylonjs-specialist,
-    unreal-specialist).
-    Authoritative on: 3D-vs-2D justification, graphical perception, encoding
-    channels, depth cues, occlusion, projection distortion, colormaps on shaded
-    surfaces, transfer functions, isosurfaces, point clouds at scale,
-    coordinated views, chart-junk critique.
+    axis encode", "which colormap for this shaded surface", "volume render or
+    isosurface", "300M points, what will a viewer learn", or perceptual review
+    of an existing visualization. USE WHEN the open question is whether depth
+    carries a real data variable and which visual channel each variable belongs
+    in; settle it before a scene is architected. Only this lens may answer "this
+    should not be 3D", and it must say so when true. DO NOT USE WHEN the
+    encoding is settled and you want a 3D design: use the relevant domain lens.
 model_role: [reasoning, critique, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Dataviz Strategist — should this be 3D at all, and if so, what is encoded in what?

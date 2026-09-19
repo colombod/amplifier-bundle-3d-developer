@@ -1,0 +1,116 @@
+digraph n_3d_developer {
+    rankdir=LR
+    fontname="Helvetica"
+    fontsize=12
+    label="3d-developer v0.1.0 — bundle repo"
+    labelloc=t
+    labeljust=c
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="8291c262c5576c7ab601466cf316b7c47fe72918a26efbe2048cf6c9a2c92885"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    root_3d_developer [label="3d-developer v0.1.0\n0 tools · 0 agents\n~544 tok aggregate", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", penwidth=2]
+
+    subgraph cluster_behaviors {
+        label="Behaviors"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        beh_3d_core_behavior [label="3d-core-behavior\n1 tools · 1 ctx\n~3247 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+        beh_3d_babylonjs_behavior [label="3d-babylonjs-behavior\n~285 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+        beh_3d_unreal_behavior [label="3d-unreal-behavior\n~267 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+    }
+
+    subgraph cluster_standalones {
+        label="Standalone Bundles"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        sta_3d_developer_babylonjs [label="3d-developer-babylonjs", shape=box, fillcolor="#80cbc4", style="filled,rounded"]
+        sta_3d_developer_unreal [label="3d-developer-unreal", shape=box, fillcolor="#80cbc4", style="filled,rounded"]
+    }
+
+    subgraph cluster_agents {
+        label="Agents"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        agt_animation_engineer [label="animation-engineer\n~145 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_babylonjs_specialist [label="babylonjs-specialist\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_camera_navigator [label="camera-navigator\n~149 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_correctness_critic [label="correctness-critic\n~149 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_dataviz_strategist [label="dataviz-strategist\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_interaction_designer [label="interaction-designer\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_label_callout_designer [label="label-callout-designer\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_particle_fx_artist [label="particle-fx-artist\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_perf_budget_critic [label="perf-budget-critic\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_postfx_artist [label="postfx-artist\n~149 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_rendering_engineer [label="rendering-engineer\n~149 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_scene_architect [label="scene-architect\n~144 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_shading_artist [label="shading-artist\n~149 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_unreal_specialist [label="unreal-specialist\n~146 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_visual_quality_critic [label="visual-quality-critic\n~148 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+    }
+
+    subgraph cluster_context {
+        label="Context Files"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        ctx_3d_developer_awareness_md [label="3d-developer-awareness.md\n~540 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+    }
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=9
+
+        leg_root [label="root bundle", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", fontsize=9]
+        leg_behavior [label="behavior", shape=box, fillcolor="#e0f2f1", style="filled,rounded", fontsize=9]
+        leg_agent [label="agent", shape=box, fillcolor="#c8e6c9", style="filled,rounded", fontsize=9]
+        leg_module [label="module", shape=box, fillcolor="#bbdefb", style="filled,rounded", fontsize=9]
+        leg_provider [label="provider", shape=box, fillcolor="#e0e0e0", style="filled,rounded", fontsize=9]
+        leg_context [label="context", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_standalone [label="standalone", shape=box, fillcolor="#80cbc4", style="filled,rounded", fontsize=9]
+        leg_experiment [label="experiment", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_ext_cost [label="ext+cost", shape=box, fillcolor="#80cbc4", style="dashed", color="red", penwidth=2, fontsize=9]
+        leg_ext_muted [label="ext+no-cost", shape=box, fillcolor="#f5f5f5", style="dashed", fontsize=9]
+    }
+
+    disclaimer [label="Token estimates: ~4 chars/token\nSolid border = local (counted)\nDashed + red = external, hidden cost (not counted)\nDashed + muted = external, no cost\nExcludes: sub-session costs, runtime-dynamic", shape=note, fillcolor="#eceff1", style="filled", fontsize=9]
+
+    ext_githttps___github_com_microsoft_amplifier_foundation_main [label="amplifier-foundation\n(external, cost)", shape=box, fillcolor="#80cbc4", style="dashed", color="red", penwidth=2]
+
+    root_3d_developer -> ext_githttps___github_com_microsoft_amplifier_foundation_main [style=dashed]
+    root_3d_developer -> beh_3d_core_behavior [label="composes"]
+    root_3d_developer -> beh_3d_babylonjs_behavior [label="composes"]
+    root_3d_developer -> beh_3d_unreal_behavior [label="composes"]
+    beh_3d_core_behavior -> agt_dataviz_strategist [label="owns"]
+    beh_3d_core_behavior -> agt_scene_architect [label="owns"]
+    beh_3d_core_behavior -> agt_rendering_engineer [label="owns"]
+    beh_3d_core_behavior -> agt_shading_artist [label="owns"]
+    beh_3d_core_behavior -> agt_interaction_designer [label="owns"]
+    beh_3d_core_behavior -> agt_camera_navigator [label="owns"]
+    beh_3d_core_behavior -> agt_postfx_artist [label="owns"]
+    beh_3d_core_behavior -> agt_label_callout_designer [label="owns"]
+    beh_3d_core_behavior -> agt_animation_engineer [label="owns"]
+    beh_3d_core_behavior -> agt_particle_fx_artist [label="owns"]
+    beh_3d_core_behavior -> agt_perf_budget_critic [label="owns"]
+    beh_3d_core_behavior -> agt_visual_quality_critic [label="owns"]
+    beh_3d_core_behavior -> agt_correctness_critic [label="owns"]
+    beh_3d_core_behavior -> ctx_3d_developer_awareness_md [style=dotted, color=purple]
+    beh_3d_babylonjs_behavior -> agt_babylonjs_specialist [label="owns"]
+    beh_3d_unreal_behavior -> agt_unreal_specialist [label="owns"]
+    sta_3d_developer_babylonjs -> root_3d_developer [label="extends", style=dashed]
+    sta_3d_developer_unreal -> root_3d_developer [label="extends", style=dashed]
+}

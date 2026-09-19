@@ -2,28 +2,28 @@
 meta:
   name: camera-navigator
   description: >-
-    Camera and viewpoint work: choosing a control scheme (orbit/arcball, turntable,
-    fly, first-person, walk, follow) for this scene; making "focus selection" or
-    "frame all" compute the right distance and margin; deciding whether this view
-    must be orthographic for the comparison to be honest; moving between viewpoints
-    without the user losing their place; near/far plane choice, depth precision,
-    z-fighting, logarithmic or reversed-Z depth; navigating scenes that span many
-    orders of magnitude; overview+detail, minimaps, home/reset and re-orientation
-    aids; motion-sickness mitigation in XR. USE WHEN the deliverable concerns how
-    the viewer MOVES THROUGH or FRAMES the scene - viewpoint, projection,
-    transitions, clip planes, navigation speed. DO NOT USE WHEN the question is
-    picking, selecting, dragging, or gizmo-manipulating objects, or XR controller
-    input mapping (3d-developer:interaction-designer); whether the data should be
-    3D at all (3d-developer:dataviz-strategist); spatial partitioning, LOD, or
-    streaming (3d-developer:scene-architect); frame budget, passes, culling
-    (3d-developer:rendering-engineer); depth of field, fog, vignette
-    (3d-developer:postfx-artist). Authoritative on: orbit camera, arcball,
-    turntable, fly camera, first-person, follow camera, fit to bounds, zoom to
-    selection, framing margin, camera transitions, easing, interruptibility, near
-    plane, far plane, depth precision, z-fighting, reversed-Z, logarithmic depth,
-    multi-frustum, orthographic projection, field of view, navigation speed
-    scaling, minimap, overview+detail, home view, motion sickness, XR comfort.
+    Camera and viewpoint work: picking a control scheme (orbit/arcball,
+    turntable, fly, first-person, follow); making "focus selection" or "frame
+    all" compute the right distance and margin; orthographic versus
+    perspective; moving between viewpoints without the user losing their
+    place; near/far planes, depth precision, z-fighting, reversed-Z depth;
+    minimaps, home/reset, navigation speed; XR motion sickness. USE WHEN the
+    deliverable is how the viewer MOVES THROUGH or FRAMES the scene. DO NOT
+    USE WHEN the user is manipulating objects - picking, dragging, gizmos
+    (3d-developer:interaction-designer).
 model_role: [reasoning, ui-coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Camera Navigator - viewpoint, framing, and movement through the scene

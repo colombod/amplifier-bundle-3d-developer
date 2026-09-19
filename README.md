@@ -166,8 +166,8 @@ The aggregation rules are fixed, not judgement calls:
 
 | Recipe | What it adds over the skill |
 |---|---|
-| `recipes/design-review-pipeline.yaml` | The three critics over one existing `artifact`, then a human approval gate (`default: deny`) before any revision runs. Checkpointed and resumable. |
-| `recipes/build-3d-feature.yaml` | The full arc: `dataviz-strategist` scoping with a gate that lets you stop when the verdict is "this should be 2D", then a fixed design set (scene → shading → camera → rendering, rendering last because it owns the total budget), then the cold critics, a gate, and a conditional platform handoff. |
+| `@3d-developer:recipes/design-review-pipeline.yaml` | The three critics over one existing `artifact`, then a human approval gate (`default: deny`) before any revision runs. Checkpointed and resumable. |
+| `@3d-developer:recipes/build-3d-feature.yaml` | The full arc: `dataviz-strategist` scoping with a gate that lets you stop when the verdict is "this should be 2D", then a fixed design set (scene → shading → camera → rendering, rendering last because it owns the total budget), then the cold critics, a gate, and a conditional platform handoff. |
 
 Two honest notes on the recipes. First, a recipe step's `agent:` is a static
 string, so the critics run **sequentially** rather than in parallel — their
@@ -237,6 +237,18 @@ Read these before trusting anything the bench tells you.
 - **Two platforms only.** three.js, Unity, Godot, WebGPU-native and Vulkan/DX12
   work are not covered. The domain lenses are engine-agnostic and will still be
   useful; the implementation handoff will not.
+
+## Developing on this bundle: skills load from the pushed commit
+
+`behaviors/3d-core.yaml` registers the skills directory as a **pinned git URL**,
+not as `@3d-developer:skills`. That is deliberate — git-URL skill sources resolve
+eagerly at mount, which is what makes the slash commands register; an
+`@namespace:path` source resolves late and the command silently fails to appear.
+
+The consequence, which will otherwise cost you an afternoon: **edits to
+`skills/*/SKILL.md` have no runtime effect until they are committed and pushed.**
+Agents and context resolve from your working tree; skills resolve from `main` on
+GitHub. Nothing warns you about the split. Push, then test.
 
 ## Contributing: adding a third platform layer
 

@@ -2,27 +2,27 @@
 meta:
   name: visual-quality-critic
   description: >-
-    A screenshot, render, mockup or design doc needs an independent read-check
-    before it ships. Requests like "review this frame", "does this chart read", "is
-    anything occluded, ambiguous or washed out", "why does this look wrong", "the
-    effect stack is fighting the data", "would we notice if this view regressed",
-    "do we have a golden image for this". Judging whether a proposed regression test
-    would catch the defect, at what resolution, tier and tolerance. USE WHEN an
-    artifact already exists — design, screenshot or implementation — and what is
-    wanted is a verdict on whether a human eye can make
-    the intended reading, and whether a regression would be detected rather than
-    shipping silently. DO NOT USE WHEN the ask is to produce or repair the design
-    rather than judge it — route to the owning lens
-    (3d-developer:dataviz-strategist, 3d-developer:postfx-artist,
-    3d-developer:label-callout-designer); when the concern is frame time, draw calls
-    or memory — 3d-developer:perf-budget-critic; when it is colour space,
-    premultiplied alpha, depth precision or data-to-geometry mapping —
-    3d-developer:correctness-critic; when engine API specifics are wanted —
-    3d-developer:babylonjs-specialist or 3d-developer:unreal-specialist.
-    Authoritative on: legibility review, visual QA, golden-image testing, perceptual
-    diff, comparison tolerance, depth-cue sufficiency, occlusion audit, colormap
-    legibility, cross-device visual validation, visual regression detection.
+    A screenshot, render or design doc needs an independent read-check: "review this
+    frame", "does this chart read", "would we notice if this view regressed", "do we
+    have a golden image for this". USE WHEN an artifact already exists and the want is a
+    verdict on whether a human eye can make the intended reading, and whether a
+    regression would be caught rather than shipping silently. DO NOT USE WHEN the ask is
+    to produce or repair the design, not judge it; the concern is frame time
+    (3d-developer:perf-budget-critic) or a numerical error dressed as an art choice
+    (3d-developer:correctness-critic).
 model_role: [critique, vision, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Visual Quality Critic — does this read correctly to a human eye, and would a regression be caught?

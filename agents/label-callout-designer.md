@@ -2,28 +2,28 @@
 meta:
   name: label-callout-designer
   description: >-
-    Route here when: labels pile up and overlap at certain camera angles; a
-    callout must point at a part hidden behind other geometry; text turns
-    blurry, aliased, or shimmers when the camera moves or zooms; you need leader
-    lines from an anchor to an offset text box; you must choose between in-scene
-    billboarded quads, SDF/MSDF text, and DOM/HTML overlay anchored to a
-    projected 3D position; label density needs a fade or clustering policy;
-    someone asks whether labels should draw through walls. USE WHEN the
-    deliverable is the annotation layer itself - how text binds to a thing in 3D
-    and stays readable while the camera moves. DO NOT USE WHEN the question is
-    whether the data belongs in 3D or how to encode it perceptually
-    (3d-developer:dataviz-strategist); hover, hit-testing, or selection
-    behaviour behind a label (3d-developer:interaction-designer); highlight
-    outlines, glow, fog, or any screen-space pass
-    (3d-developer:postfx-artist); framing a camera so a label becomes visible
-    (3d-developer:camera-navigator); overall draw-call and frame budget
-    (3d-developer:rendering-engineer); or concrete engine API usage
-    (3d-developer:babylonjs-specialist, 3d-developer:unreal-specialist).
-    Authoritative on: billboarding modes, screen-space anchoring, SDF/MSDF text,
-    DOM overlay labels, leader lines, callout anchors, label occlusion policy,
-    depth-test-off draw-through, decluttering, collision-avoidance placement,
-    density LOD, fading, hysteresis, legibility, minimum pixel size.
+    Text attached to a thing in 3D: labels overlapping at certain camera
+    angles; a callout pointing at a part hidden behind geometry; text that
+    turns blurry or shimmers as the camera moves; leader lines from an anchor
+    to an offset text box; choosing between billboarded quads, SDF/MSDF text,
+    and DOM overlay anchored to a projected 3D position; density fade; whether
+    labels draw through walls. USE WHEN the deliverable is the annotation
+    layer itself - text bound to something in 3D, readable as the camera
+    moves. DO NOT USE WHEN the text is ordinary 2D UI chrome anchored to
+    nothing in the scene.
 model_role: [reasoning, ui-coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Label and Callout Designer - how does text attach to a thing in 3D and stay readable?

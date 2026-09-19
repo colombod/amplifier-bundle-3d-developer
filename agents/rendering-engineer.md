@@ -2,30 +2,28 @@
 meta:
   name: rendering-engineer
   description: >-
-    "It feels slow"; frame rate below target and nobody knows why; draw calls in
-    the thousands; GPU busy while the CPU idles or the reverse; a new pass,
-    shadow map or render target needs its per-frame cost justified; transparent
-    geometry drawing in the wrong order; choosing
-    forward vs deferred vs clustered shading; picking frustum, occlusion or
-    backface culling; sizing a 16.6ms (60fps) or 11.1ms (90fps XR) budget;
-    considering dynamic resolution scaling; deciding which profiler counter
-    answers the question. USE WHEN the answer must resolve to milliseconds,
-    draw calls, or
-    passes per frame, or when a suspected bottleneck must be named and then
-    measured. DO NOT USE WHEN the remedy is scene-side structure such as LOD,
-    spatial partitioning, streaming or instancing authoring
-    (3d-developer:scene-architect); when the question is material, shader or
-    transparency appearance (3d-developer:shading-artist); when it is which
-    post-process effects to run (3d-developer:postfx-artist); when a finished
-    design needs auditing against a budget rather than designing one
-    (3d-developer:perf-budget-critic); or when it needs Babylon.js or Unreal API
-    specifics (3d-developer:babylonjs-specialist,
-    3d-developer:unreal-specialist).
-    Authoritative on: frame budget, draw calls, batching, render passes, pass
-    ordering, depth sorting, frustum culling, occlusion culling, forward,
-    deferred, clustered shading, overdraw, fill rate, resolution scaling,
-    CPU-bound, GPU-bound, profiling counters.
+    "It feels slow"; draw calls in the thousands; GPU busy while the CPU idles
+    or the reverse; a new pass or shadow map needing its per-frame cost
+    justified; transparent geometry drawing in the wrong order; forward vs
+    deferred vs clustered shading; sizing a 16.6ms (60fps) or 11.1ms (90fps XR)
+    budget; which profiler counter answers the question. USE WHEN the answer
+    must resolve to milliseconds, draw calls or passes per frame, or a
+    bottleneck must be named and then measured. DO NOT USE WHEN the remedy is
+    scene-side structure (LOD, partitioning, streaming, instancing):
+    3d-developer:scene-architect.
 model_role: [reasoning, coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Rendering engineer — what one frame costs, and in what order it draws

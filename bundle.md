@@ -26,10 +26,6 @@ wants both of them to justify the frame time. This bundle makes each of those
 lenses a separate agent so the disagreement happens *before* the frame budget
 blows, not after.
 
-(The routing table lives in `context/3d-developer-awareness.md`, loaded once by
-the `3d-core` behavior — not re-mentioned here, because the two channels are not
-deduplicated against each other.)
-
 ## How to use it
 
 1. **Scope first.** If it is not obvious that the thing should be 3D at all,
@@ -41,7 +37,7 @@ deduplicated against each other.)
    Hand their output to `3d-developer:babylonjs-specialist` or
    `3d-developer:unreal-specialist` for the actual API-level implementation.
 4. **Review before you ship.** Load the `3d-design-review` skill (or run
-   `recipes/design-review-pipeline.yaml`) to fan the three critics out cold
+   `@3d-developer:recipes/design-review-pipeline.yaml`) to fan the critics out cold
    against the same artifact and get a BLOCK / PASS verdict with dissent
    recorded.
 

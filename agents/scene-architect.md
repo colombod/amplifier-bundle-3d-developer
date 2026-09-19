@@ -3,26 +3,26 @@ meta:
   name: scene-architect
   description: >-
     Route here for "we load 2 million objects and the tab dies", "how should the
-    scene graph be organized", "should these be instances, thin instances or one
-    merged mesh", "how do I stream a city-scale or building-scale dataset", "what
-    LOD tiers do I need and why does everything pop", "we added an octree and it
-    got no faster", "memory climbs the longer the user navigates". USE WHEN the
-    question is how scene content is structured, partitioned, tiered, instanced,
-    or held resident as object count or dataset size grows — the organization
-    that exists before any frame is drawn. DO NOT USE WHEN the question is what
-    happens inside one frame: draw-call batching, render passes, frustum and
-    occlusion culling execution, and frame budget belong to
-    3d-developer:rendering-engineer. Whether the data should be 3D at all belongs
-    to 3d-developer:dataviz-strategist; materials and shaders to
-    3d-developer:shading-artist; picking and selection ergonomics to
-    3d-developer:interaction-designer; camera and framing to
-    3d-developer:camera-navigator; Babylon.js or Unreal API-level code to
-    3d-developer:babylonjs-specialist and 3d-developer:unreal-specialist.
-    Authoritative on: scene graph, transform hierarchy, spatial partitioning,
-    octree, BVH, uniform grid, LOD tiering, switch hysteresis, impostors,
-    instancing, thin instances, merged geometry, asset streaming, tiles and
-    cells, asset lifecycle, residency, VRAM budget.
+    scene graph be organized", "instances, thin instances or one merged mesh",
+    "how do I stream a city-scale dataset", "what LOD tiers do I need and why
+    does everything pop". USE WHEN the question is how scene content is
+    structured, partitioned, tiered, instanced or held resident as object count
+    or dataset size grows: the organization that exists before any frame is
+    drawn. DO NOT USE WHEN it is what happens inside one frame (batching,
+    passes, culling, frame budget): 3d-developer:rendering-engineer.
 model_role: [reasoning, coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Scene Architect — how the scene is organized, streamed, culled and simplified as it scales

@@ -2,28 +2,27 @@
 meta:
   name: correctness-critic
   description: >-
-    A design doc, shader, material or scene where something looks off but
-    nothing crashes: colours washed out or oversaturated after a blend, dark
-    halos around cut-out foliage and UI sprites, lighting that inverts on a
-    mirrored or negatively scaled mesh, z-fighting shimmer on coplanar surfaces,
-    normal maps reading inverted, a chart whose bar heights no longer match their
-    numbers. Requests to audit colour space and gamma, sRGB
-    texture flags, tone-mapping placement, depth precision and near-plane choice,
-    normal/tangent space handedness and renormalization after interpolation or
-    skinning, winding order and backface culling, premultiplied versus straight
-    alpha, or units, scale and coordinate conventions. USE WHEN you need it
-    proven that a result is numerically wrong rather than merely ugly, as a cold
-    independent verdict. DO NOT USE WHEN the question is whether
-    the frame fits its budget - 3d-developer:perf-budget-critic; whether it reads
-    well to a viewer - 3d-developer:visual-quality-critic; when you want a design
-    produced rather than judged - 3d-developer:shading-artist or
-    3d-developer:postfx-artist; or when the answer is an engine API specific -
-    3d-developer:babylonjs-specialist or 3d-developer:unreal-specialist.
-    Authoritative on: colour space, gamma, sRGB, tone mapping order,
-    premultiplied alpha, depth precision, reverse-Z, near plane,
-    tangent space, normalization, handedness, winding order, backface culling,
-    units, scale, coordinate conventions.
+    A design doc, shader, material or scene where something looks off but nothing
+    crashes: colours washed out after a blend, dark halos on cut-out alpha, lighting
+    inverting on mirrored meshes, bar heights no longer matching their numbers. Audits
+    of colour space and gamma, sRGB flags, tone-mapping order, depth precision, tangent
+    handedness, winding order and premultiplied alpha. USE WHEN it must be proven a
+    result is numerically wrong, not merely ugly. DO NOT USE WHEN the question is frame
+    cost (3d-developer:perf-budget-critic) or whether it reads to a viewer
+    (3d-developer:visual-quality-critic).
 model_role: [critique, security-audit, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Correctness Critic — which of these is a numerical error wearing the costume of an art direction choice?

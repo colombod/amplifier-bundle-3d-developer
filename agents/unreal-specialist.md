@@ -2,29 +2,27 @@
 meta:
   name: unreal-specialist
   description: >-
-    Unreal Engine is named in the ask: which Actor/Component structure
-    implements this, Blueprint or C++ for this path, which Niagara module,
-    whether a mesh is Nanite-eligible, why a post-process material samples the
-    wrong buffer, what this costs on the target hardware. Also translating an
-    already-settled engine-agnostic 3D design into UE5 constructs: World
-    Partition, HLOD, Sequencer, Control Rig, post-process volumes, UMG
-    WidgetComponent, Enhanced Input, stat commands, Unreal Insights. USE WHEN
-    the design decision is already made and what remains is naming the Unreal
-    construct, making the Blueprint-vs-C++ call, and costing the frame. DO NOT
-    USE WHEN the question is engine-agnostic design: scene graph, LOD and
-    streaming strategy belong to 3d-developer:scene-architect; pass structure
-    and frame budget to 3d-developer:rendering-engineer; material and
-    transparency design to 3d-developer:shading-artist; effect selection to
-    3d-developer:postfx-artist; label layout to
-    3d-developer:label-callout-designer; picking and gizmo design to
-    3d-developer:interaction-designer; whether 3D is warranted at all to
-    3d-developer:dataviz-strategist. DO NOT USE WHEN the target is the browser,
-    which 3d-developer:babylonjs-specialist owns. Authoritative on: Unreal
-    Engine, UE5, Actor, Component, Blueprint, C++, Nanite, Lumen, World
-    Partition, HLOD, Niagara, Sequencer, Control Rig, UMG, WidgetComponent,
-    Enhanced Input, post-process volume, material instance, TSR, stat gpu,
-    Unreal Insights, cooking, packaging.
+    Unreal Engine is named in the ask: which Actor/Component structure implements this,
+    Blueprint or C++, which Niagara module, whether a mesh is Nanite-eligible, what it
+    costs on target hardware. Translating a settled engine-agnostic design into UE5
+    constructs: World Partition, HLOD, post-process volumes, Enhanced Input. USE WHEN
+    the design decision is made and what remains is naming the Unreal construct and
+    costing the frame. DO NOT USE WHEN the design is still engine-agnostic - route to
+    the owning domain lens first - or the target is the browser
+    (3d-developer:babylonjs-specialist).
 model_role: [coding, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Unreal specialist — the engine construct and its cost

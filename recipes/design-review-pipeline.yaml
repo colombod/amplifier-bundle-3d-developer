@@ -13,7 +13,7 @@
 #
 # Usage:
 #   amplifier tool invoke recipes operation=execute \
-#     recipe_path=3d-developer:recipes/design-review-pipeline.yaml \
+#     recipe_path=@3d-developer:recipes/design-review-pipeline.yaml \
 #     context='{"artifact": "docs/designs/volume-render.md"}'
 #
 # Expected runtime: ~5-12 minutes depending on artifact size.

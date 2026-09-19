@@ -2,29 +2,28 @@
 meta:
   name: animation-engineer
   description: >-
-    Motion design and animation architecture for 3D visualization: keyframe and
-    tween systems, easing, skeletal animation and blending, morph targets,
-    procedural and physics-driven motion, timeline sequencing and scrubbing,
-    frame-rate-independent timing, and animating tens of thousands of objects
-    without per-object CPU work. Also owns data-driven transitions -- staging
-    motion so a change in the data is legible and object constancy is preserved.
-    Typical asks: "animate the bars when the dataset refreshes", "cross-fade
-    between two clips", "it runs at double speed on a 120Hz display", "scrub a
-    timeline over 50k moving points". USE WHEN the question is what moves,
-    driven by what clock, and what the motion means. DO NOT USE WHEN the motion
-    is emitter- or simulation-driven
-    effects -- smoke, explosions, fluid -- that is
-    3d-developer:particle-fx-artist; when it is the camera that moves,
-    3d-developer:camera-navigator; when the question is whether an encoding
-    should be 3D at all, 3d-developer:dataviz-strategist; when it is scene
-    graph, LOD, or instancing structure, 3d-developer:scene-architect; or when
-    engine API specifics are needed, 3d-developer:babylonjs-specialist and
-    3d-developer:unreal-specialist.
-    Authoritative on: keyframes, tweening, easing, slerp, skeletal blending,
-    retargeting, morph targets, procedural motion, IK, physics blend weight,
-    timeline scrubbing, delta time, fixed timestep, vertex animation textures,
-    instanced animation, staged transitions, object constancy.
+    Animation architecture: keyframe and tween systems, easing, skeletal
+    animation and blending, procedural and physics-driven motion, timeline
+    sequencing and scrubbing, frame-rate-independent timing, and animating
+    tens of thousands of objects without per-object CPU work; plus data-driven
+    transitions staged to stay legible. USE WHEN the question is what moves,
+    driven by what clock, and what the motion means. DO NOT USE WHEN the
+    motion is emitter- or simulation-driven - smoke, explosions, fluid
+    (3d-developer:particle-fx-artist) - or the camera moves
+    (3d-developer:camera-navigator).
 model_role: [coding, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Animation Engineer -- what moves, driven by what clock, and what does the motion mean?

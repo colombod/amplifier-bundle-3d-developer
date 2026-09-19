@@ -2,30 +2,28 @@
 meta:
   name: interaction-designer
   description: >-
-    Clicking a mesh selects the wrong object; hover highlight collapses the frame
-    rate at 50k instances; a transform gizmo jumps on grab or drags off-axis;
-    box-select must work over a million points; mouse, touch and XR controllers
-    need one shared selection path; a keyboard user cannot reach anything in the
-    viewport. USE WHEN the question is how a person points at, selects or
-    manipulates scene content: CPU ray picking versus GPU colour/ID picking and
-    where they cross over, hit-test acceleration, pickable-set filtering,
-    selection models (single, additive, box, lasso, hierarchical), hover and
-    highlight rendering, gizmo and constrained-drag semantics, snapping,
-    pointer/touch/XR/gaze input, interaction latency budgets, and 3D
-    accessibility. DO NOT USE WHEN the ask is moving or framing the camera,
-    orbit/fly or view transitions — that is 3d-developer:camera-navigator.
-    Also not yours: whether to use 3D at all
-    (3d-developer:dataviz-strategist); scene graph, partitioning, LOD, instancing
-    (3d-developer:scene-architect); outline as an image-space post pass
-    (3d-developer:postfx-artist); frame budget and draw calls
-    (3d-developer:rendering-engineer); engine API specifics
-    (3d-developer:babylonjs-specialist, 3d-developer:unreal-specialist).
-    Authoritative on: picking, raycast, line trace, hit test, GPU picking, ID
-    buffer, selection, multi-select, box select, lasso, hover, highlight,
-    selection outline, gizmo, manipulator, drag, constrained manipulation,
-    snapping, pointer events, touch input, XR controller, gaze, input latency,
-    3D accessibility.
+    Clicking a mesh selects the wrong object; hover highlight collapses the
+    frame rate at 50k instances; box-select must work over a million points;
+    mouse, touch and XR controllers needing one selection path; a keyboard user
+    cannot reach the viewport. USE WHEN the question is how a person points at,
+    selects or manipulates scene content: CPU ray versus GPU ID picking,
+    selection models, hover and highlight, gizmo and constrained-drag semantics,
+    input latency, 3D accessibility. DO NOT USE WHEN the ask is moving or
+    framing the camera, orbit/fly or view transitions:
+    3d-developer:camera-navigator.
 model_role: [reasoning, ui-coding, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Interaction Designer — how a person points at, selects and manipulates this scene

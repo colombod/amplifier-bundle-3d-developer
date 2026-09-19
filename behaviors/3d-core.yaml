@@ -52,7 +52,10 @@ agents:
     - 3d-developer:visual-quality-critic
     - 3d-developer:correctness-critic
 
-# Thin awareness pointer only (~250 tokens). All heavy knowledge lives in the agents.
+# Thin awareness pointer only (~540 tokens measured). All heavy knowledge lives in the
+# agents, @mentioned from their bodies so it bills to the sub-session, not to every turn.
+# Deliberately NOT also @mentioned from bundle.md's body: the two channels (context.include
+# and @mention) are not deduplicated against each other, so a file in both loads twice.
 context:
   include:
     - 3d-developer:context/3d-developer-awareness.md

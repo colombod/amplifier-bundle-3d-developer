@@ -2,27 +2,28 @@
 meta:
   name: postfx-artist
   description: >-
-    Frame is drawn but reads flat, washed out, or "video-gamey". Requests naming
-    depth of field, fog (linear, exponential, height, volumetric), bloom,
-    SSAO/ambient occlusion, screen-space reflections, motion blur, tone mapping,
-    color grading, vignette, selection outlines or highlight glows. Choosing an
-    anti-aliasing method — MSAA versus FXAA versus TAA versus TSR versus a
-    temporal upscaler. A post chain producing wrong results where pass ordering
-    or a missing buffer (depth, normals, velocity) is suspect. USE WHEN the
-    subject is a whole-frame
-    pass applied after the scene is rasterized: what it costs at a stated output
-    resolution, which inputs it requires, and where it sits relative to the
-    tonemapper and the AA resolve. DO NOT USE WHEN the effect belongs to one
-    surface's material — 3d-developer:shading-artist; when the question is total
-    frame budget, pass scheduling, culling or draw calls —
-    3d-developer:rendering-engineer; when depth cueing is really a framing or
-    lens-choice question — 3d-developer:camera-navigator; when emitters are the
-    subject — 3d-developer:particle-fx-artist; or when engine API specifics are
-    wanted — 3d-developer:babylonjs-specialist or 3d-developer:unreal-specialist.
-    Authoritative on: post chain order, depth of field, bloom, fog, volumetric
-    fog, SSAO, SSR, motion blur, tone mapping, color grading, anti-aliasing,
-    TAA, TSR, FXAA, MSAA, outlines, highlights, vignette, fill-rate cost.
+    Frame is drawn but reads flat or "video-gamey". Depth of field, fog
+    (height, volumetric), bloom, SSAO, screen-space reflections, motion blur,
+    tone mapping, color grading, vignette, selection outlines, glows; choosing
+    anti-aliasing (MSAA vs FXAA vs TAA vs TSR); a post chain wrong from pass
+    ordering or a missing depth/normal/velocity buffer. USE WHEN the subject
+    is a whole-frame pass applied after the scene is rasterized - its cost,
+    its inputs, and where it sits relative to the tonemapper and AA resolve.
+    DO NOT USE WHEN the effect belongs to one surface's material
+    (3d-developer:shading-artist).
 model_role: [coding, reasoning, general]
+tools:
+  # Declared explicitly, not inherited: this behavior advertises itself as
+  # composable onto ANY host bundle, and an agent that only works when the host
+  # happens to mount a filesystem tool is not portable. The critics in particular
+  # are contractually required to emit file:line evidence anchors, and the review
+  # recipe accepts a PATH as its artifact -- without these they would have to
+  # abstain or fabricate. Read-only posture is enforced by the agent body, not by
+  # the tool set; use the review skill/recipe rather than asking a critic to edit.
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Post-FX Artist — what happens to the frame after the scene is drawn, and what does each pass cost?
