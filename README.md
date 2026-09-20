@@ -60,7 +60,18 @@ routing list, so they hand off to each other rather than guessing.
 
 ## Install
 
-Three entry points. Pick one.
+Four working entry points, and two combinations that look like they work and
+don't. Every command in this section was executed in an isolated container
+against the published `main`; the verdicts below are observed, not assumed.
+
+| Path | Command shape | Verdict |
+|---|---|---|
+| Root as primary | `add <root>` + `use 3d-developer` | works — all 15 agents, both skills |
+| Root as app bundle | `add <root> --app` | **broken** — silently drops the system instruction |
+| `3d-core` behavior layered | `add ...behaviors/3d-core.yaml --app` | works — **preferred**; 13 agents, no platform specialists |
+| Behavior as primary | `add ...behaviors/3d-core.yaml` + `use` | **broken** — exits 0, then every session fails to mount |
+| Platform behavior layered | `add ...behaviors/platform-*.yaml --app` | works — adds exactly that specialist |
+| Standalone variant | `add ...bundles/with-babylonjs.yaml` + `use` | works — 14 agents, no `unreal-specialist` |
 
 **Everything** — foundation + the core bench + both platform layers, as a
 primary bundle:
@@ -96,7 +107,7 @@ amplifier bundle add "git+https://github.com/colombod/amplifier-bundle-3d-develo
 ```
 
 That gives you the ten domain lenses, the three critics, the two skills, and a
-~250-token awareness pointer. It deliberately does **not** include either
+~490-token awareness pointer. It deliberately does **not** include either
 platform specialist. Add the ones you actually target, the same way:
 
 ```bash
@@ -109,6 +120,44 @@ amplifier bundle add "git+https://github.com/colombod/amplifier-bundle-3d-develo
 
 The split is the point: a web-only consumer never carries Unreal knowledge in
 its agent catalog, and vice versa.
+
+### Two combinations that do NOT work
+
+Both of these print a green checkmark and exit 0. Neither is usable. Every
+command above and below was executed in an isolated container; these two are
+here because they were **tested and observed to fail**, not assumed to.
+
+**Do not add a root bundle with `--app`.** `bundle add <root> --app` composes
+the agents and tools fine — but silently drops the bundle's own system
+instruction, and the warning scrolls past in mount noise:
+
+```
+Bundle '3d-developer' (...) carries a markdown body; dropping it.
+A composed behavior/app bundle must not replace the root bundle's
+system instruction.
+```
+
+You get the fifteen agents and none of the instructions for using them — no
+"scope first", no "pick the platform late". Use `behaviors/3d-core.yaml --app`
+for layering (it has no body to drop) or `bundle use 3d-developer` as primary.
+
+**Do not `bundle use` a behavior.** `bundle add behaviors/3d-core.yaml` without
+`--app`, followed by `bundle use 3d-core-behavior`, reports success twice and
+then breaks every session:
+
+```
+Error mounting tools: Configuration must specify session.orchestrator
+ValueError: Configuration must specify session.orchestrator
+```
+
+Tool count drops to 0 and `amplifier run` exits 1 on a raw traceback. Behaviors
+are layers, not bundles: this one includes no provider, orchestrator or
+foundation on purpose, because the host it layers onto already has them. A
+behavior is `--app`, always.
+
+The general trap: `bundle add` validates that a bundle can be **fetched**, never
+that it can be **composed**. The checkmark means "cloned it and read its
+metadata." Incompatibility surfaces later, at mount, in a different command.
 
 ## Using it
 
