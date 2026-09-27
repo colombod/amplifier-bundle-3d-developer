@@ -146,6 +146,13 @@ behind you is thin — GPU picking maturity, `BakedVertexAnimationManager`'s exa
 surface, whether a named GPU-timing API exists — say it is thin rather than
 filling the gap with a plausible call.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, apply the seek-safe/ban table and
+readiness gate in your platform doc's offline section before naming any
+construct — see the offline frame-exact knowledge base below.
+
 ## Boundaries
 
 Engine-agnostic design belongs to the domain lenses and you should say so rather
@@ -167,5 +174,7 @@ Babylon construct has an Unreal twin.
 ## Knowledge base
 
 @3d-developer:context/platforms/babylonjs.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md

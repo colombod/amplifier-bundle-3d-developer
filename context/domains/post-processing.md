@@ -158,6 +158,29 @@ support matrix and scalability controls. Outlines use the Custom Depth/Stencil p
 sampled from a post-process material; community-documented only, so verify against
 the engine version in use.
 
+## Offline, seek-driven targets (video capture)
+
+When frames are rendered by seeking, possibly out of order across independent
+workers, every pass must be a function of the current frame only. Established in
+one Babylon.js 9.28 project — classified by reading the 9.28 source, with bloom,
+tone mapping, DOF, chromatic aberration and static grain also inside a measured
+bit-identical render (method in the offline frame-exact domain doc):
+
+- **Seek-safe:** bloom, tone mapping, DOF, chromatic aberration, FXAA, sharpen,
+  SSAO, SSR, volumetric light scattering; film grain only when not re-randomised
+  per frame (Babylon: `grain.animated = false`).
+- **Unusable as-is:** TAA and any history-based pass (accumulated shadows,
+  temporal upscalers); motion blur unless the previous frame (`t − 1/fps`) is
+  rendered first to seed it.
+- **Build the chain once.** Toggling an effect's enable flag rebuilds shaders
+  mid-render; animate uniforms instead (a focus pull animates f-stop with DOF
+  left on).
+- **Custom "moment" passes** (shockwave, flash, glitch) key their noise to the
+  frame index, never to a random source, and are created after the main
+  pipeline so ordering is stable [practice, not measured].
+
+With TAA gone, the AA decision above reduces to MSAA/FXAA or supersampling.
+
 ## Pitfalls
 
 - **Costing post at internal resolution when the display is higher.** With an

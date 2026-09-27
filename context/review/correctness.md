@@ -13,6 +13,7 @@ look like a decision somebody made.
 | Depth precision, reverse-Z, near plane | **Not sourced.** Widely used practice, no usable documentation in this lens's research. Label findings engineering judgment. |
 | Normal/tangent space, handedness, TBN | **Not sourced at all.** The mathematics (short normal gives smaller N·L; negative determinant flips winding) is assertable as mathematics. Which convention a given engine or format uses must be verified in its docs, never asserted from memory. |
 | Graphics code-review checklists | **Not sourced.** No documented industry artifact; the checklist below is constructed for this lens. Cite it as nothing. |
+| Offline-video determinism and the effect-pipeline findings below | **Measured in one project** (Babylon.js 9.28, headless Chrome, 2026-09): each was caught by a cold run of this lens and confirmed in renders; mechanisms read in the 9.28 source. Engine-specific — re-verify on other versions. |
 | Image-comparison regression testing | **Documented, Unity-specific.** Unity's Graphics Test Framework and `ImageComparisonSettings` give versioned golden-image comparison with configurable thresholds. No equivalent for other engines appears in the research. |
 
 ## The pitfall catalog
@@ -35,14 +36,26 @@ look like a decision somebody made.
 | **Coordinate/handedness mismatch** (Y-up vs Z-up, left- vs right-handed, UV origin) | Assets arrive rotated 90 degrees or mirrored | A per-instance corrective rotation fixes one asset and breaks the next | Name both conventions and the single conversion point. Per-asset corrections signal a missing global conversion |
 | **Quantity-to-geometry encoding error — the data lie** | A bar, radius or offset that no longer matches the number it encodes: nonzero baseline, value mapped to radius while the eye reads area, log data on a linear axis, perspective making equal quantities different sizes | The chart is beautiful and internally consistent; nothing renders wrong. The *claim about the world* is false | Measure three data points' rendered extents and compare the ratios to the source numbers; check axis and legend match the actual mapping |
 
+### Effect-pipeline and offline-render pitfalls (measured, Babylon.js 9.28)
+
+| Pitfall | How it looks | Why it is silent | The check that catches it |
+|---|---|---|---|
+| **Glow colour from material emissive, not instance colour** (`GlowLayer` with thin-instance colours) | Every coloured particle gets the same white halo | Reads as a styling choice for "glow" | Glow pass computes the halo from `emissiveColor`; correct is the per-instance colour. Exclude sprite meshes from the glow layer, or give them per-instance emissive |
+| **DOF reads the depth behind blended geometry** (depth renderer skips alpha-blended meshes) | Additive particles blurred ~20x too softly against sky | Soft particles look intentional | CoC is computed from the background's depth; correct is the particle's. Exclude from DOF or force depth write; counter-case: a particle in focus in front of sky |
+| **Fog added, not faded, on additive materials** | Distant additive sprites get brighter and fog-tinted | Reads as atmospheric glow | Fog yields `mix(fog, c, f)`, and the additive blend then adds that; correct is a fade to zero contribution. Disable fog on additive materials |
+| **Nondeterminism in an offline render** (`Math.random`, engine clock, unreplayed integrator, temporal accumulation) | Nothing — each frame looks fine | Only a comparison between renders exposes it | Render with 1 worker and N workers; `ffmpeg -f framemd5` hashes must match frame for frame, including chunk-boundary frames, **on a scene with at least one element that first appears after `t = 0`**. Method in the offline frame-exact domain doc |
+| **First appearance mid-timeline compiles asynchronously** (mesh hidden via `isVisible`, never drawn by the readiness gate; engine links its program in the background via `KHR_parallel_shader_compile` and skips the mesh until done) | Renders diverge from the first frame that mesh appears — measured from frame ~15–16 of 60, not at a chunk boundary | Every CPU-side value is a pure function of `t`; GPU link time is a hidden wall-clock input | Grep for timeline-driven `isVisible` toggles and for the parallel-compile cap being left on; counter-case: 1 vs N workers on a scene where a mesh first appears mid-chunk. Fix: force synchronous linking, hide by scale 0, warm the gate at probe times across the timeline. Measured; mechanism in the Babylon.js 9.28 source |
+| **API misuse that kills the page before capture** (Babylon 9.x `Engine.IsSupported()` — a property, not a function) | A blank video; the renderer reports success with only a readiness-timeout warning | No crash reaches the operator | Assert on output: file size, non-background pixel coverage, per-frame hash variance |
+
 ## Silent vs visible — the ranking rule
 
 Rank silent above visible, always.
 
 - **Silent** (wrong values, plausible image): sRGB flag errors, gamma-space
   blending, mips in the wrong space, unnormalized normals, missing
-  inverse-transpose, unit/scale mismatch, quantity-to-geometry errors. These get
-  compensated for, and the compensation entrenches them.
+  inverse-transpose, unit/scale mismatch, quantity-to-geometry errors,
+  offline-render nondeterminism, glow/DOF/fog computed from the wrong input.
+  These get compensated for, and the compensation entrenches them.
 - **Visible** (artifacts): black fringes, z-fighting shimmer, missing faces,
   inverted bumps, seams. Someone eventually reports these.
 
@@ -68,6 +81,13 @@ code-review checklist. Use it as a coverage list, cite it as nothing.
    match their source ratios; axis and legend match the actual mapping.
 8. **Regression guard** — is there a golden-image or value-level test for each
    item, or does it rely on someone noticing?
+9. **Offline video only** — frame is a pure function of `t`; seeded PRNG;
+   stateful systems replay from checkpoints; no temporal passes; shader
+   compilation synchronous and warmed across the timeline, not just at `t = 0`;
+   no visibility toggles for appearance; a 1-vs-N-worker `framemd5` comparison
+   exists, matches, **and its scene includes an element that first appears after
+   `t = 0`**. Absence of the comparison, or a test scene without a late
+   appearance, is a finding, not a pass.
 
 ## Platform pointers
 

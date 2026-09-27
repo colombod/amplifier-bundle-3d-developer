@@ -16,6 +16,7 @@ The research base behind this document covers **profiling tools** thoroughly and
 | Named frame-budget methodology; per-stage millisecond allocations | **Not vendor-documented.** Every per-stage ms split in circulation is practitioner synthesis |
 | A general cross-platform rendering anti-pattern checklist | **Not a documented industry artifact.** Section 5 is engineering generalization, not sourced fact |
 | Graphics-specific code-review checklists; depth precision (reverse-Z, near/far); normal/tangent-space conventions | **No evidentiary support** — treat any claim as unverified |
+| Offline (seek-driven) render throughput; headless-GPU driver behaviour on Linux | **Measured in one project** — NVIDIA T600 4 GB, headless Chrome, HyperFrames 0.8.33, Babylon.js 9.28, 2026-09. One rig; quote it with the number |
 | Spector.js, Nsight Graphics, Radeon GPU Profiler, Snapdragon Profiler, PresentMon | Absent from the evidence base. Widely referred to in practice, but **unverified here** — do not cite them as documented capability |
 
 Practical consequence: you can almost always name a **tool and counter** with
@@ -85,6 +86,37 @@ allocation convention, a category taxonomy, or an enforcement process. So:
 - Budgets must be stated against a **named target device class and resolution**
   (per-eye for XR). A cost with no target is half a claim.
 
+### Offline video has a different budget unit
+
+When the deliverable is a video rendered by a seek-driven capture pipeline,
+there is no frame interval to hold. The claim to audit is **seconds per frame
+per worker**, worker count, wall-clock per clip, resolution, the rasterizer
+actually in use, and the worst-case replay length of any stateful simulation.
+A design that quotes 16.6 ms for an offline render has stated the wrong budget.
+
+Measured, software GL, 1080p, full post stack (bloom, ACES, DOF, chromatic
+aberration, grain), 180 frames:
+
+| Workers | Wall-clock | Per output frame |
+|---|---|---|
+| 1 | 423 s | ~2.35 s |
+| 2 | 263–284 s | ~1.5 s |
+
+Arithmetic on those numbers: 2 workers are 1.49–1.61x faster, not 2x — each
+worker slowed to ~2.9–3.2 s/frame, consistent with sharing one CPU rasterizer.
+Any claim of linear worker scaling on software GL is unsupported.
+
+**The headless GPU trap (measured).** On that Linux rig, headless Chrome's
+default WebGL was SwiftShader (CPU); `--use-angle=gl-egl` fell back to Mesa
+llvmpipe (CPU); Vulkan and WebGPU found no adapter. Cause: NVIDIA's
+headless/compute-only driver packages (`nvidia-headless-no-dkms-*-server`,
+`libnvidia-compute`) ship no `libnvidia-gl` — no EGL vendor file, empty
+`/etc/vulkan/icd.d`. Hardware WebGL/WebGPU needs `libnvidia-gl-<ver>-server`.
+Blender Cycles (CUDA) worked on the compute-only stack. **A throughput number
+without the page's unmasked renderer string beside it is half a claim** — the
+host "having a GPU" is not evidence the browser used it. Hardware and software GL
+also produce different pixels, so switching changes golden references.
+
 ## 5. Anti-pattern catalog — symptom, likely cause, confirming measurement
 
 Only the mobile overdraw and prefer-opaque entries are vendor-documented; the
@@ -101,6 +133,8 @@ falsifier — it converts a suspicion into a finding.
 | Cost proportional to screen area covered by transparent geometry | Blended overdraw depth; sorted per-draw, no early-Z rejection | Overdraw visualisation; per-draw pixel counters on the transparent pass |
 | Merging geometry cut draw calls but frame time got worse | Batching coarsened culling granularity — one visible fragment renders the whole merged object | Compare rendered-primitive counts before/after in a capture, not draw-call counts |
 | Many small passes / render targets, each individually cheap | Per-pass fixed overhead and bandwidth (especially tiled mobile GPUs) | Pass list and per-pass GPU time in a capture; bandwidth counters where exposed |
+| Offline render far slower than planned on a GPU host | Browser on a software rasterizer (SwiftShader / llvmpipe); compute-only GPU driver | Log `WEBGL_debug_renderer_info`'s unmasked renderer in the page; check for an NVIDIA EGL vendor file and a Vulkan ICD |
+| Doubling render workers far short of doubling throughput | Workers contend for one CPU rasterizer or CPU cores | Per-worker s/frame at 1 and N workers, same clip |
 | VRAM pressure, intermittent hitching | Render-target and texture footprint at the stated resolution/format | Memory figures per target; Unreal memory-optimisation guidance on Android |
 
 ## 6. Auditing a claimed optimisation
@@ -147,5 +181,7 @@ Enough to hand off — not an API tutorial.
   cost, not typical cost.
 - **Confusing abstention with a blocker.** "No performance surface" and "will
   miss frame time" are opposite verdicts; never phrase them alike.
+- **Auditing an offline render against a real-time interval.** The budget is
+  seconds per frame on a named rasterizer, not 16.6 ms.
 - **Padding findings.** Speculation trains the owner to discount the anchored
   findings too.

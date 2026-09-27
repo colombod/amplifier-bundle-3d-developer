@@ -181,6 +181,20 @@ Two skills drive that loop:
 Both are user-invocable (`/3d-build-loop`, `/3d-design-review`) and
 model-invocable via `load_skill`.
 
+### Two delivery targets
+
+The bench covers **real-time interactive** rendering and **frame-exact offline
+rendering to video** — a capture pipeline (HyperFrames, Remotion with
+`@remotion/three`, Theatre.js, any headless CDP capture) seeks the scene to each
+frame, possibly across parallel independent workers. The second has a different
+budget unit (seconds per frame per worker, not 16.6 ms), a determinism
+requirement, and a standard test for it: render with 1 worker and N workers and
+compare `ffmpeg -f framemd5` hashes, on a scene where at least one element first
+appears after `t = 0` (a scene with everything visible from frame 0 passed while
+a late-appearing mesh still diverged). Say which target you mean in the request;
+the rendering, animation, particle, Babylon.js and critic lenses carry
+`context/domains/offline-frame-exact.md` and apply it when the target is video.
+
 ## The review loop
 
 `3d-design-review` fans all three critics out in a single response, each with
@@ -232,10 +246,18 @@ depends on them.
 
 ## How the knowledge was built
 
-Every knowledge-base doc under `context/` was distilled from a `deep-research`
-run. The full report and complete source list for each is committed under
-`docs/research/`, with the run id recorded in the file: **eleven runs, 736
-sources total** (`deep-research` 0.9.0, depth medium, backend perplexity).
+Every knowledge-base doc under `context/` except one was distilled from a
+`deep-research` run. The exception, `context/domains/offline-frame-exact.md`,
+and the offline additions to the Babylon.js, Unreal, particles and review docs,
+come from one real project (Unfold, an explainer-video tool, 2026-09) and are
+tagged `[MEASURED]` / `[SOURCE]` / `[ASSESSED]` / `[PRACTICE]` / `[RECOMMENDED]`
+with the rig and engine version stated (each doc spells the tags in its own
+legend's style).
+
+For the research-derived docs, the full report and complete source list for each
+is committed under `docs/research/`, with the run id recorded in the file:
+**eleven runs, 736 sources total** (`deep-research` 0.9.0, depth medium, backend
+perplexity).
 
 The runs, with their source counts: `3d-dataviz-principles` (75),
 `animation-systems` (59), `camera-navigation` (70), `interaction-picking` (74),
@@ -276,9 +298,11 @@ Read these before trusting anything the bench tells you.
   patterns (animation); frame-budget checklists, graphics code-review
   checklists, and normal/tangent-space conventions (review-and-quality); the
   entire cross-engine principles layer (scene-architecture).
-- **No number in this repo is a measurement taken from this repo.** Every frame
-  cost, threshold and budget is either cited to a source or labelled as
-  generalization. The agents produce *falsifiable cost claims with the
+- **Almost no number in this repo is a measurement.** Every frame cost,
+  threshold and budget is cited to a source or labelled as generalization —
+  except the offline-rendering figures, which were measured in one project on
+  one rig (NVIDIA T600, headless software GL, Babylon.js 9.28) and say so.
+  Treat them as one data point, not a benchmark. The agents produce *falsifiable cost claims with the
   measurement that would settle them* — they do not produce measurements.
 - **There are no automated tests of agent output quality.** Nothing here
   verifies that a lens gives good advice; the critics are the only quality

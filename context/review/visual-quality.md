@@ -3,7 +3,9 @@
 Reference knowledge for judging whether a 3D visualization reads correctly to a human
 eye, and whether a regression would be detected.
 
-Evidence status is marked throughout. **[Sourced]** = the research documents it.
+Evidence status is marked throughout. **[Measured]** = observed in one real
+offline-video project (Babylon.js 9.28, 2026-09; rig in the offline frame-exact
+domain doc). **[Sourced]** = the research documents it.
 **[Analytical]** = engineering generalization consistent with the evidence, not
 established by it. **[Unverified]** = the research found no supporting source. Never
 promote one tier to another.
@@ -58,6 +60,15 @@ Run in order. Stop and record a finding wherever a step fails; do not skip ahead
 | Transparent overlays fringe dark or bright | Straight vs premultiplied alpha — correctness-critic | Sourced |
 | Text unreadable at small size | Billboarded labels without a minimum pixel size | Analytical |
 | Golden test passes but the view is wrong | Tolerance too loose, or reference captured after the defect landed | Analytical |
+| Category hues all turn white where particle streams converge | Additive overlap: per-particle emissive too high, hard-edged sprites. Cap emissive so ~3 overlaps reach the bloom threshold; soft radial quads | Measured (fix: Analytical) |
+| Labels slide off their nodes as the camera moves | Static screen-space labels; project each frame (e.g. Babylon `Vector3.ProjectToRef`) | Measured |
+| Particles pop in at full size on arrival | Size/alpha driven by lifetime, not by progress along the path | Measured |
+| Large soft grey blob that is not any object in the scene | A semi-glossy ground plane mirroring a bright studio/IBL panel, then blurred by depth of field. Keep floors rough and near-non-metallic (e.g. metallic ~0.02, roughness ~0.7, reduced environment intensity); check by re-rendering one frame with the floor roughened | Measured (Babylon 9.28: that region's mean luminance fell 57%, rest of frame within 3 points) |
+| A neon/emissive object reads as a pale white blob instead of its colour | A glow layer's blur landing on the object's own face, on top of bloom and tone mapping. Lowering emissive barely helps (tone mapping desaturates what remains). Exclude self-emissive objects from the glow layer and let bloom carry the halo; a saturated emissive (e.g. colour squared) keeps the hue | Measured (Babylon 9.28 GlowLayer: emissive 1.0 → 0.35 left it white; excluding the mesh restored the hue) |
+| Screen-projected labels sliced at the frame edge | Labels placed wherever their node projects, with no edge handling. Fade label opacity to 0 within a margin (~40 px) of any screen edge | Measured |
+| Hard light band with a sharp lower edge across the top of a close-up | Not a floor or fog seam: it is the horizon itself, with the sky just above it brighter than the dark floor, exposed because the camera's top edge looks above horizontal. Fog colour and floor size do not remove it; frame the horizon out (raise elevation so the top ray stays below horizontal) or make sky and floor meet in tone. Check with a top-rows luminance profile | Measured (fog/floor-size variants left the step at ~22 levels; +6° elevation cut it to ~1) |
+| Every coloured particle has the same white halo | Glow derived from material emissive — correctness-critic | Measured |
+| A mesh that appears mid-clip shows up a frame or more late, differently per render | First appearance compiled asynchronously; readiness gate never drew it — correctness-critic | Measured |
 
 Effect-stack symptoms — grey far field, smeared highlights, white haze — see section 4.
 
@@ -78,7 +89,7 @@ technique is real and widely practised; its *standardization* is what is unsuppo
 | Output resolution | A 1080p reference cannot validate a 4K or mobile render |
 | Device / driver / API tier | The reference is only valid where it was captured |
 | Comparison metric and tolerance | "Compare the images" is not a threshold |
-| Determinism controls | Temporal AA off, fixed seed, fixed time step, no wall-clock, streaming/LOD settled |
+| Determinism controls | Temporal AA off, fixed seed, fixed time step, no wall-clock, streaming/LOD settled. For offline video, test it: 1-worker vs N-worker `framemd5` must match, on a scene where something first appears after `t = 0` **[Measured]** |
 | Diff artifact storage | A failure with no stored diff image cannot be triaged |
 
 **Honest limitations — state these whenever you recommend one** (all **[Analytical]**):
@@ -87,9 +98,15 @@ technique is real and widely practised; its *standardization* is what is unsuppo
   real regressions. There is no safe default.
 - GPU and driver variance changes pixels for identical inputs, so a reference from one
   vendor's driver needs a raised tolerance elsewhere — reintroducing the problem above.
-- Antialiasing is not bit-deterministic across runs or hardware, and temporal methods
+- Antialiasing is not bit-deterministic across hardware, and temporal methods
   (TAA, TSR, upscalers) accumulate across frames, so a capture depends on history.
-  Disable temporal AA for captures or accept permanent noise.
+  Disable temporal AA for captures or accept permanent noise. Within one GL
+  implementation, a non-temporal stack (FXAA, bloom, DOF, static grain) rendered
+  bit-identical across independent runs in a scene with nothing appearing
+  mid-timeline **[Measured]**; a scene with a late-appearing mesh diverged until
+  its shaders were compiled synchronously and warmed **[Measured]**, so check
+  the scene exercises that before trusting a match; hardware and software GL
+  differ in pixels **[Measured]**, so a reference is per rasterizer.
 - Stochastic content — particles, GPU noise, jittered soft shadows — needs a seeded RNG
   or it can never be compared. Async streaming and LOD mean the same frame index is a
   different image unless you wait for settle. Text rasterization differs by platform.
@@ -162,5 +179,8 @@ reference cannot serve all of them.
 - **Muting a flaky comparison instead of making the capture deterministic.** The flake
   is almost always temporal AA, an unseeded RNG, or unsettled streaming — fixable at the
   capture, not the threshold.
+- **Trusting a render that reported success.** A seek-driven renderer produced a
+  180-frame blank video with only a readiness-timeout warning **[Measured]**.
+  Check a sampled frame's non-background coverage before judging anything.
 - **Testing only the default camera.** Regressions concentrate in states nobody
   captured: extreme zoom, empty dataset, single datum, max density, selection active.

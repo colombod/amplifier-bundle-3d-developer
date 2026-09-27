@@ -33,6 +33,12 @@ Two facts constrain how this interval is spent:
 Any per-stage table is therefore a target to test against captured data, not a
 specification.
 
+**Offline video has no frame interval.** When a seek-driven renderer captures
+frames to a file, the budget unit is seconds per frame per worker on a named
+rasterizer — measured at ~1.5–2.35 s/frame for 1080p on headless software GL in
+one project. Method, numbers and the headless-GPU driver trap are in the offline
+frame-exact domain doc; do not size an offline render against 16.6 ms.
+
 A workable starting split for a 16.6ms desktop frame, offered explicitly as
 **[synthesis]**: visibility/culling CPU 1–2ms; draw submission CPU 2–4ms; shadow
 and depth GPU 2–4ms; opaque base pass GPU 3–5ms; lighting GPU 2–4ms;

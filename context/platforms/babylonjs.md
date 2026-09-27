@@ -8,6 +8,10 @@ evidence grade on each and the browser cost attached.
 - `[documented]` — named in official Babylon.js docs or typedoc.
 - `[community]` — forums, DeepWiki mirrors, blogs; real, API possibly unsettled.
 - `[unverified]` — practice or inference, not sourced; a hypothesis to check.
+- `[source 9.28]` — read in the Babylon.js 9.28 source during a real project
+  (2026-09). Pinned to that version; re-check on upgrade.
+- `[measured]` — observed in that project's renders, measured or visually
+  confirmed (rig in the offline frame-exact domain doc).
 
 A tag is provenance, not truth. `[documented]` still drifts: the research could
 not establish which release is current (9.0 was announced, with nothing ruling
@@ -163,8 +167,10 @@ this evidence `[unverified]`.
 | Screen-space reflections | `SSRRenderingPipeline` (replaced an older SSR post-process) | `[documented]` |
 | Custom chain | `PostProcess` (each consumes the prior output), `PostProcessRenderPipeline` | `[documented]` |
 | Motion blur | `StandardRenderingPipeline` — **deprecated** in favour of `DefaultRenderingPipeline`, whose motion blur is not documented in the evidence | `[documented]` / gap |
+| Film grain | `DefaultRenderingPipeline` grain — `grain.animated = true` reseeds from `Math.random` every frame | `[source 9.28]` |
 
-Gaps to state rather than paper over: **no TAA/TSR equivalent**; **no height or
+Gaps to state rather than paper over: **no TSR equivalent** (TAA exists in 9.x
+`[source 9.28]` but is temporal — see §14); **no height or
 volumetric fog pipeline** (scene fog modes are documented only generically); and
 **no quantified GPU cost** for any effect — every cost ranking is synthesis.
 
@@ -205,6 +211,7 @@ anywhere; any such table is `[unverified]`.
 | Baked deformation at scale | Baked vertex animation — precomputed into a texture sampled in the vertex shader, no per-instance CPU skinning | workflow `[documented]`, `BakedVertexAnimationManager` shape `[unverified]` |
 | Trails / thick lines | `TrailMesh`, `GreasedLineBaseMesh` | `[documented]` |
 | Frame-rate-independent timing | Delta time and a constant-delta / deterministic-step option on `Scene` | `[documented]`, exact property names `[unverified]` |
+| Constant-delta animation | `useConstantAnimationDeltaTime` — fixed **16 ms (60 fps)**, wrong for 30 fps output | `[source 9.28]` |
 
 Use quaternions, not Euler angles, for rotation channels; the keyframe rate
 passed to `Animation` is not the display rate — playback runs against elapsed
@@ -221,7 +228,7 @@ alternative `[unverified — synthesis]`.
 | `ParticleSystem` | CPU-simulated, GPU-rendered; flat property set for emission, lifetime, colour, size, gravity, direction, sprite-sheet, blend mode | `[documented]` |
 | `GPUParticleSystem` | Simulation on the GPU; **narrower feature set** — no sub-emitters, restrictions on manual emission and gradients; CPU fallback when unavailable | `[documented]` |
 | `SolidParticleSystem` | One mesh holding many particle instances; **no built-in emitter, recycler or physics** — you write `updateParticle` and call `setParticles()` | `[documented]` |
-| Node Particle Editor | Graph-based particle authoring, newer addition | `[documented]` |
+| Node Particle Editor | Graph-based particle authoring, newer addition. **`NodeParticleSystem` is not present in the 9.28 UMD `babylonjs` package** — check your distribution before designing on it | `[documented]`; absence `[source 9.28]` |
 | Fluid Renderer | **Screen-space rendering**, not a solver: takes particle positions and renders depth/thickness/diffuse textures composited into a fluid surface | `[documented]` |
 
 Stopping emission does **not** remove already-rendered particles — disposal is
@@ -232,6 +239,11 @@ a named feature (only depth-texture sampling via a custom `ShaderMaterial` and
 `depthSampler`, which is `[community]`); curl noise, vector fields or SDF flow
 fields; SPH or FLIP solvers; volumetric smoke; simulation-to-flipbook baking.
 SPS depth sorting is `[community]` only.
+
+Seekability, not CPU-vs-GPU, is the split that matters for offline video:
+`ParticleSystem` and `GPUParticleSystem` advance by delta with no set-time API;
+`SolidParticleSystem` driven from a closed-form `f(seed, t)` is seek-safe
+`[source 9.28]`. See §14.
 
 ---
 
@@ -276,6 +288,10 @@ Clustered lighting is contingent on floating-point colour-buffer support on both
 | Blank canvas mid-session | WebGL/WebGPU context loss — real, and needs a recovery path `[unverified — not in this research]`. |
 | Long time to first frame | Download and decode are separate costs — GLB payload size plus mesh-compression and texture-transcode CPU time `[unverified — Draco/KTX2 specifics are not in this research]`. |
 | Data read back wrong from a texture | sRGB/linear confusion — data maps must be linear `[documented]`. |
+| Page dies at start-up with "is not a function" | `Engine.IsSupported()` — in 9.x `IsSupported` is a boolean **property**; `Engine.isSupported()` is the function `[source 9.28]`. In a headless renderer this produced a blank video with no error `[measured]`. |
+| Coloured particles all get the same white halo | `GlowLayer` takes glow colour from the material's `emissiveColor`, ignoring thin-instance colour — exclude sprite meshes from the glow layer `[measured]`. |
+| DOF blurs additive particles far too much | Depth renderer skips alpha-blended meshes (`forceDepthWriteTransparentMeshes = false`), so DOF reads the depth **behind** them — exclude them from DOF or force their depth `[source 9.28]`, `[measured]`. |
+| Fogged additive sprites brighten instead of fading | Fog mixes toward fog colour, then the additive blend adds that — set `fogEnabled = false` on additive materials `[measured]`. |
 
 ---
 
@@ -295,3 +311,94 @@ signature:
 7. **Particle techniques by name** — soft particles, flow fields, volumetric
    smoke, fluid solvers.
 8. **Constrained-drag maths and gizmo drag semantics** — practice only.
+
+---
+
+## 14. Offline / seek-driven capture (verified against 9.28 source)
+
+For rendering to video under a renderer that seeks each frame (HyperFrames,
+Remotion, Theatre.js, CDP capture). Engine-agnostic method and the determinism
+test live in the offline frame-exact domain doc; this is the construct map.
+
+**Driving model.** No `engine.runRenderLoop`; `scene.animationsEnabled = false`;
+call `scene.render()` once per seek from a pure `renderAt(t)`. Necessary, not
+sufficient: a 180/180 bit-identical 1-vs-2-worker render `[measured]` covered a
+scene with nothing appearing mid-timeline; a scene with a late-appearing mesh
+diverged until the parallel-compile and visibility fixes below were added
+`[measured]`.
+
+| Seek-safe as-is | Tag |
+|---|---|
+| Thin instances; `SolidParticleSystem` driven manually from `f(seed, t)` | `[source 9.28]` |
+| `AnimationGroup.goToFrame` | `[source 9.28]` |
+| `GlowLayer`; `DefaultRenderingPipeline` bloom, DOF, chromatic aberration, FXAA, sharpen | `[source 9.28]` |
+| Grain **only** with `grain.animated = false` | `[source 9.28]` |
+| `SSAO2RenderingPipeline`, `SSRRenderingPipeline`, `VolumetricLightScatteringPostProcess` | `[source 9.28]` |
+| `GaussianSplattingMesh` — resolve any pending (dirty) sort before capture | `[source 9.28]` |
+| `NodeMaterial` **without** time blocks | `[source 9.28]` |
+
+| Ban or wrap | Why | Tag |
+|---|---|---|
+| `ParticleSystem`, `GPUParticleSystem` | Stateful, advance by delta, no set-time; GPU random texture built from `Math.random` at creation | `[source 9.28]` |
+| Havok | Integrator with no snapshot API `[source 9.28]`. Rapier has `world.takeSnapshot` and documents cross-platform determinism `[documented, Rapier]` | see cells |
+| TAA, `IblShadowsRenderPipeline` | Temporal accumulation / history | `[source 9.28]` |
+| Motion blur | Needs previous-frame matrices; seek-safe only by rendering `t − 1/fps` first | `[source 9.28]` |
+| `useConstantAnimationDeltaTime` | Fixed 16 ms, i.e. 60 fps | `[source 9.28]` |
+| Parallel shader compilation (on whenever the browser exposes `KHR_parallel_shader_compile`; headless Chrome does) | Programs link in the background; the mesh is **silently skipped** until linking finishes, so its first visible frame depends on wall-clock time | `[source 9.28]`, `[measured]` |
+| `mesh.isVisible` toggled by the timeline | An invisible mesh is not rendered, so the readiness gate never compiles it | `[measured]` |
+
+**Parallel shader compile trap.** Measured: a 2 s, 60-frame scene3d render
+diverged between 2-worker and 1-worker runs from frame ~15–16 (frames 0–14
+identical), although every CPU-side value was a pure function of `t`. A link
+tube starting with `isVisible = false` was never compiled by the gate; when it
+appeared, its program compiled asynchronously. Ablation: same markup with a
+stub `babylon.js` matched, real `babylon.js` did not `[measured]`. Fix, right
+after engine creation:
+
+```js
+const caps = engine.getCaps();
+if (caps.parallelShaderCompile) caps.parallelShaderCompile = undefined;
+```
+
+Why it works `[source 9.28]`: `ThinEngine.createPipelineContext()` copies
+`this._caps.parallelShaderCompile` into the per-context state every time a
+program is created (minified:
+`i.parallelShaderCompile && !i.disableParallelShaderCompile && (t.isParallelCompiled = true)`),
+so clearing the cap makes every later program link synchronously within the
+frame that needs it. The condition also consults a
+`disableParallelShaderCompile` flag; clearing the cap is the variant that was
+measured. With it in place the scene passes
+`test_scene3d_render_is_deterministic_across_worker_counts` `[measured]`.
+
+**Appearance without `isVisible`.** Hide timeline-driven meshes by scaling them
+to 0 — still drawn, therefore compiled from `t = 0` — or keep them drawn
+`[measured]`.
+
+**Readiness gate.** `scene.whenReadyAsync()` defaults `checkRenderTargets` to
+false and misses the DOF depth-renderer shader created on first render. Use
+`whenReadyAsync(true)`, warm-render until `scene.isReady(true)`, then reset any
+render dedupe so the renderer's own `t = 0` seek produces frame 0; register the
+seek handler only after that `[source 9.28]`, `[measured]`. The gate readies
+only what it renders, so warm it at **probe times across the whole timeline**
+— 0, 0.25, 0.5, 0.75 and 1 × duration — until `scene.isReady(true)`, then
+rewind; checkpointed simulations make the warm renders harmless `[measured]`.
+
+**Build once.** Changing a pipeline enable flag rebuilds shaders mid-render.
+Create every effect up front; afterwards change only uniforms — a focus pull is
+`fStop` 22 → 1.4 with DOF left on `[source 9.28]`. A custom full-screen
+`PostProcess` created **after** the pipeline keeps a stable order `[unverified —
+practice]`.
+
+**Deterministic IBL without assets.** A procedural HDR environment computed
+analytically into a float `RawCubeTexture`, with irradiance computed
+**synchronously** via
+`CubeMapToSphericalPolynomialTools.ConvertCubeMapToSphericalPolynomial` — no
+network, no async `readPixels` `[unverified — practice]`.
+
+**CSP.** No `eval` / `new Function` in the bundle, so strict `script-src 'self'`
+works — provided KTX2, Draco and the Havok worker paths (`blob:` Workers) are
+avoided `[source 9.28]`.
+
+**Headless backend.** Headless Chrome defaults to SwiftShader; hardware WebGL
+on Linux needs the NVIDIA GL userspace, not the compute-only driver
+`[measured]` — details in the perf-budget review doc and the offline doc.

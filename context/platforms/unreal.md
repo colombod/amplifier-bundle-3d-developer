@@ -12,6 +12,7 @@ each claim.
 | `[community]` | Real and widely used, but supported only by forum threads, third-party guides or bug trackers. |
 | `[4.27-era]` | The supporting page is UE 4.27. The concept persists into 5.x; continuity of names, UI and behaviour is **unconfirmed**. |
 | `[unverified]` | Outside knowledge with **no supporting source**. Say so or drop it. |
+| `[assessed]` | Established during one real project's engine evaluation for automated offline video (Unfold, 2026-09): install, licence and capability checks. Not re-verified here; pricing and licence terms drift. |
 
 Two cautions everywhere. **Locale duplicates are not corroboration** — the
 Lumen Performance Guide, Spring Arm guide, anti-aliasing and material pages
@@ -277,5 +278,29 @@ Say so rather than filling these in:
 - **Undocumented**: Nanite eligibility; ISM/HISM; runtime fit-to-view;
   multi-selection; leader lines; morph targets; touch in Enhanced Input; GTAO;
   SSR docs; per-effect GPU costs; golden-image regression; frame budgets.
+- **Render-node licensing** for Movie Render Queue farms is unverified — see §14.
 - **Which release is "current" is unresolved** — 5.5, 5.6 and 5.7 all appear.
   Ask which version the caller is on.
+
+## 14. Automated offline rendering — Movie Render Queue verdict
+
+For pipelines that render clips to video **unattended** (no artist at the
+editor), as opposed to interactive UE5 builds. The engine-agnostic method —
+seek-driven capture, determinism, the 1-vs-N-worker test — is in the offline
+frame-exact domain doc.
+
+| Question | Finding | Tag |
+|---|---|---|
+| Host | Viable only on an **8 GB+ RTX** GPU host; Vulkan on Linux | `[assessed]` |
+| Install | ~50 GB; download requires an Epic account | `[assessed]` |
+| Licence | $1,850 per seat per year for non-game organisations above $1M revenue | `[assessed]` — check current Epic terms |
+| Render nodes | Whether headless render nodes need their own seats | `[unverified]` |
+| Compositing alpha | **Additive Niagara sprites write near-zero alpha**, so glow disappears when the clip is composited over another layer | `[assessed]` |
+| Determinism levers | Sequencer's rational tick model and a custom time-step class | `[documented]` (§8) |
+
+Verdict `[assessed]`: for explainer-style 3D in an automated pipeline, the
+project chose an in-browser engine inside a seek-driven renderer, with Blender
+headless as the offline clip producer; MRQ stays an option only where the RTX
+host and licence already exist. If you composite MRQ output, budget an alpha
+path for additive effects — a separate pass, or an additive composite
+`[unverified — judgment]`.
