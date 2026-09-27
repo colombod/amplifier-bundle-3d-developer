@@ -90,7 +90,8 @@ itself.
   never PASS.
 - **Offline video needs determinism evidence.** When the target is offline
   video, report whether a 1-worker vs N-worker `ffmpeg -f framemd5` comparison
-  exists and matched, as the critics found it. Missing evidence is reported as
+  exists and matched, and whether its scene includes an element that first
+  appears after `t = 0`, as the critics found it. Missing evidence is reported as
   **MISSING**, never inferred as a pass — the correctness critic treats its
   absence as a finding.
 - **Taste is advisory.** The visual critic separates legibility defects from

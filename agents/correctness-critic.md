@@ -174,8 +174,10 @@ is exactly the failure mode this lens exists to prevent.
 video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
 Remotion, Theatre.js, headless capture); if it is not stated and the answer
 turns on it, say so. For offline video, nondeterminism is a silent error:
-require the 1-worker-vs-N-worker framemd5 comparison and report its absence as a
-finding — see the offline frame-exact knowledge base below.
+require the 1-worker-vs-N-worker framemd5 comparison on a scene where something
+first appears after t = 0, and report its absence as a finding. CPU purity in t
+is not enough: mid-timeline first appearances can compile asynchronously — see
+the offline frame-exact knowledge base below.
 
 ## Boundaries
 

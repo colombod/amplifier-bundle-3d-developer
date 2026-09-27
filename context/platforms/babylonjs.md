@@ -321,8 +321,11 @@ Remotion, Theatre.js, CDP capture). Engine-agnostic method and the determinism
 test live in the offline frame-exact domain doc; this is the construct map.
 
 **Driving model.** No `engine.runRenderLoop`; `scene.animationsEnabled = false`;
-call `scene.render()` once per seek from a pure `renderAt(t)`
-`[measured]` — 1-worker and 2-worker renders bit-identical, 180/180 frames.
+call `scene.render()` once per seek from a pure `renderAt(t)`. Necessary, not
+sufficient: a 180/180 bit-identical 1-vs-2-worker render `[measured]` covered a
+scene with nothing appearing mid-timeline; a scene with a late-appearing mesh
+diverged until the parallel-compile and visibility fixes below were added
+`[measured]`.
 
 | Seek-safe as-is | Tag |
 |---|---|
@@ -341,12 +344,44 @@ call `scene.render()` once per seek from a pure `renderAt(t)`
 | TAA, `IblShadowsRenderPipeline` | Temporal accumulation / history | `[source 9.28]` |
 | Motion blur | Needs previous-frame matrices; seek-safe only by rendering `t − 1/fps` first | `[source 9.28]` |
 | `useConstantAnimationDeltaTime` | Fixed 16 ms, i.e. 60 fps | `[source 9.28]` |
+| Parallel shader compilation (on whenever the browser exposes `KHR_parallel_shader_compile`; headless Chrome does) | Programs link in the background; the mesh is **silently skipped** until linking finishes, so its first visible frame depends on wall-clock time | `[source 9.28]`, `[measured]` |
+| `mesh.isVisible` toggled by the timeline | An invisible mesh is not rendered, so the readiness gate never compiles it | `[measured]` |
+
+**Parallel shader compile trap.** Measured: a 2 s, 60-frame scene3d render
+diverged between 2-worker and 1-worker runs from frame ~15–16 (frames 0–14
+identical), although every CPU-side value was a pure function of `t`. A link
+tube starting with `isVisible = false` was never compiled by the gate; when it
+appeared, its program compiled asynchronously. Ablation: same markup with a
+stub `babylon.js` matched, real `babylon.js` did not `[measured]`. Fix, right
+after engine creation:
+
+```js
+const caps = engine.getCaps();
+if (caps.parallelShaderCompile) caps.parallelShaderCompile = undefined;
+```
+
+Why it works `[source 9.28]`: `ThinEngine.createPipelineContext()` copies
+`this._caps.parallelShaderCompile` into the per-context state every time a
+program is created (minified:
+`i.parallelShaderCompile && !i.disableParallelShaderCompile && (t.isParallelCompiled = true)`),
+so clearing the cap makes every later program link synchronously within the
+frame that needs it. The condition also consults a
+`disableParallelShaderCompile` flag; clearing the cap is the variant that was
+measured. With it in place the scene passes
+`test_scene3d_render_is_deterministic_across_worker_counts` `[measured]`.
+
+**Appearance without `isVisible`.** Hide timeline-driven meshes by scaling them
+to 0 — still drawn, therefore compiled from `t = 0` — or keep them drawn
+`[measured]`.
 
 **Readiness gate.** `scene.whenReadyAsync()` defaults `checkRenderTargets` to
 false and misses the DOF depth-renderer shader created on first render. Use
 `whenReadyAsync(true)`, warm-render until `scene.isReady(true)`, then reset any
 render dedupe so the renderer's own `t = 0` seek produces frame 0; register the
-seek handler only after that `[source 9.28]`, `[measured]`.
+seek handler only after that `[source 9.28]`, `[measured]`. The gate readies
+only what it renders, so warm it at **probe times across the whole timeline**
+— 0, 0.25, 0.5, 0.75 and 1 × duration — until `scene.isReady(true)`, then
+rewind; checkpointed simulations make the warm renders harmless `[measured]`.
 
 **Build once.** Changing a pipeline enable flag rebuilds shaders mid-render.
 Create every effect up front; afterwards change only uniforms — a focus pull is

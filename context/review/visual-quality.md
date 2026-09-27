@@ -64,6 +64,7 @@ Run in order. Stop and record a finding wherever a step fails; do not skip ahead
 | Labels slide off their nodes as the camera moves | Static screen-space labels; project each frame (e.g. Babylon `Vector3.ProjectToRef`) | Measured |
 | Particles pop in at full size on arrival | Size/alpha driven by lifetime, not by progress along the path | Measured |
 | Every coloured particle has the same white halo | Glow derived from material emissive — correctness-critic | Measured |
+| A mesh that appears mid-clip shows up a frame or more late, differently per render | First appearance compiled asynchronously; readiness gate never drew it — correctness-critic | Measured |
 
 Effect-stack symptoms — grey far field, smeared highlights, white haze — see section 4.
 
@@ -84,7 +85,7 @@ technique is real and widely practised; its *standardization* is what is unsuppo
 | Output resolution | A 1080p reference cannot validate a 4K or mobile render |
 | Device / driver / API tier | The reference is only valid where it was captured |
 | Comparison metric and tolerance | "Compare the images" is not a threshold |
-| Determinism controls | Temporal AA off, fixed seed, fixed time step, no wall-clock, streaming/LOD settled. For offline video, prove it: 1-worker vs N-worker `framemd5` must match **[Measured]** |
+| Determinism controls | Temporal AA off, fixed seed, fixed time step, no wall-clock, streaming/LOD settled. For offline video, test it: 1-worker vs N-worker `framemd5` must match, on a scene where something first appears after `t = 0` **[Measured]** |
 | Diff artifact storage | A failure with no stored diff image cannot be triaged |
 
 **Honest limitations — state these whenever you recommend one** (all **[Analytical]**):
@@ -97,7 +98,10 @@ technique is real and widely practised; its *standardization* is what is unsuppo
   (TAA, TSR, upscalers) accumulate across frames, so a capture depends on history.
   Disable temporal AA for captures or accept permanent noise. Within one GL
   implementation, a non-temporal stack (FXAA, bloom, DOF, static grain) rendered
-  bit-identical across independent runs **[Measured]**; hardware and software GL
+  bit-identical across independent runs in a scene with nothing appearing
+  mid-timeline **[Measured]**; a scene with a late-appearing mesh diverged until
+  its shaders were compiled synchronously and warmed **[Measured]**, so check
+  the scene exercises that before trusting a match; hardware and software GL
   differ in pixels **[Measured]**, so a reference is per rasterizer.
 - Stochastic content — particles, GPU noise, jittered soft shadows — needs a seeded RNG
   or it can never be compared. Async streaming and LOD mean the same frame index is a

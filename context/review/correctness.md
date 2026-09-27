@@ -43,7 +43,8 @@ look like a decision somebody made.
 | **Glow colour from material emissive, not instance colour** (`GlowLayer` with thin-instance colours) | Every coloured particle gets the same white halo | Reads as a styling choice for "glow" | Glow pass computes the halo from `emissiveColor`; correct is the per-instance colour. Exclude sprite meshes from the glow layer, or give them per-instance emissive |
 | **DOF reads the depth behind blended geometry** (depth renderer skips alpha-blended meshes) | Additive particles blurred ~20x too softly against sky | Soft particles look intentional | CoC is computed from the background's depth; correct is the particle's. Exclude from DOF or force depth write; counter-case: a particle in focus in front of sky |
 | **Fog added, not faded, on additive materials** | Distant additive sprites get brighter and fog-tinted | Reads as atmospheric glow | Fog yields `mix(fog, c, f)`, and the additive blend then adds that; correct is a fade to zero contribution. Disable fog on additive materials |
-| **Nondeterminism in an offline render** (`Math.random`, engine clock, unreplayed integrator, temporal accumulation) | Nothing — each frame looks fine | Only a comparison between renders exposes it | Render with 1 worker and N workers; `ffmpeg -f framemd5` hashes must match frame for frame, including chunk-boundary frames. Method in the offline frame-exact domain doc |
+| **Nondeterminism in an offline render** (`Math.random`, engine clock, unreplayed integrator, temporal accumulation) | Nothing — each frame looks fine | Only a comparison between renders exposes it | Render with 1 worker and N workers; `ffmpeg -f framemd5` hashes must match frame for frame, including chunk-boundary frames, **on a scene with at least one element that first appears after `t = 0`**. Method in the offline frame-exact domain doc |
+| **First appearance mid-timeline compiles asynchronously** (mesh hidden via `isVisible`, never drawn by the readiness gate; engine links its program in the background via `KHR_parallel_shader_compile` and skips the mesh until done) | Renders diverge from the first frame that mesh appears — measured from frame ~15–16 of 60, not at a chunk boundary | Every CPU-side value is a pure function of `t`; GPU link time is a hidden wall-clock input | Grep for timeline-driven `isVisible` toggles and for the parallel-compile cap being left on; counter-case: 1 vs N workers on a scene where a mesh first appears mid-chunk. Fix: force synchronous linking, hide by scale 0, warm the gate at probe times across the timeline. Measured; mechanism in the Babylon.js 9.28 source |
 | **API misuse that kills the page before capture** (Babylon 9.x `Engine.IsSupported()` — a property, not a function) | A blank video; the renderer reports success with only a readiness-timeout warning | No crash reaches the operator | Assert on output: file size, non-background pixel coverage, per-frame hash variance |
 
 ## Silent vs visible — the ranking rule
@@ -81,9 +82,12 @@ code-review checklist. Use it as a coverage list, cite it as nothing.
 8. **Regression guard** — is there a golden-image or value-level test for each
    item, or does it rely on someone noticing?
 9. **Offline video only** — frame is a pure function of `t`; seeded PRNG;
-   stateful systems replay from checkpoints; no temporal passes; a 1-vs-N-worker
-   `framemd5` comparison exists and matches. Its absence is a finding, not a
-   pass.
+   stateful systems replay from checkpoints; no temporal passes; shader
+   compilation synchronous and warmed across the timeline, not just at `t = 0`;
+   no visibility toggles for appearance; a 1-vs-N-worker `framemd5` comparison
+   exists, matches, **and its scene includes an element that first appears after
+   `t = 0`**. Absence of the comparison, or a test scene without a late
+   appearance, is a finding, not a pass.
 
 ## Platform pointers
 

@@ -189,7 +189,9 @@ rendering to video** — a capture pipeline (HyperFrames, Remotion with
 frame, possibly across parallel independent workers. The second has a different
 budget unit (seconds per frame per worker, not 16.6 ms), a determinism
 requirement, and a standard test for it: render with 1 worker and N workers and
-compare `ffmpeg -f framemd5` hashes. Say which target you mean in the request;
+compare `ffmpeg -f framemd5` hashes, on a scene where at least one element first
+appears after `t = 0` (a scene with everything visible from frame 0 passed while
+a late-appearing mesh still diverged). Say which target you mean in the request;
 the rendering, animation, particle, Babylon.js and critic lenses carry
 `context/domains/offline-frame-exact.md` and apply it when the target is video.
 
