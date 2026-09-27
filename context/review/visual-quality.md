@@ -63,6 +63,7 @@ Run in order. Stop and record a finding wherever a step fails; do not skip ahead
 | Category hues all turn white where particle streams converge | Additive overlap: per-particle emissive too high, hard-edged sprites. Cap emissive so ~3 overlaps reach the bloom threshold; soft radial quads | Measured (fix: Analytical) |
 | Labels slide off their nodes as the camera moves | Static screen-space labels; project each frame (e.g. Babylon `Vector3.ProjectToRef`) | Measured |
 | Particles pop in at full size on arrival | Size/alpha driven by lifetime, not by progress along the path | Measured |
+| Large soft grey blob that is not any object in the scene | A semi-glossy ground plane mirroring a bright studio/IBL panel, then blurred by depth of field. Keep floors rough and near-non-metallic (e.g. metallic ~0.02, roughness ~0.7, reduced environment intensity); check by re-rendering one frame with the floor roughened | Measured (Babylon 9.28: that region's mean luminance fell 57%, rest of frame within 3 points) |
 | Every coloured particle has the same white halo | Glow derived from material emissive — correctness-critic | Measured |
 | A mesh that appears mid-clip shows up a frame or more late, differently per render | First appearance compiled asynchronously; readiness gate never drew it — correctness-critic | Measured |
 
