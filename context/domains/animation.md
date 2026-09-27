@@ -13,6 +13,7 @@ Most animation bugs are clock bugs. Say which clock each piece of motion rides.
 | Variable render delta | time since last frame | tweens, easing, presentation | unclamped after a stall: one frame teleports everything |
 | Fixed simulation step | accumulator, constant dt | physics, springs, deterministic replay | mixed with the variable delta |
 | Authored clip time | seek position on a timeline | clips, shots, scrubbing | assumed equal to display rate |
+| Capture seek time | an external renderer's `seek(t)` per output frame (offline video) | frame-exact video, parallel render workers | anything reads the wall clock, rAF delta or the engine's own animation clock |
 | Data time | dataset timestamps | temporal playback | conflated with playback speed |
 
 **Core rule [synthesis]:** define motion per *second*, clamp large deltas, use a
@@ -100,7 +101,12 @@ Level Sequences at runtime. Take Recorder captures live runs into Level Sequence
 -- the documented route from a non-scrubbable run to a scrubbable asset.
 
 **Scrub rule [synthesis]:** anything stateful (physics, accumulators, particle history)
-is not scrubbable; bake to keyframes, a recorded sequence, or a VAT.
+is not scrubbable; bake to keyframes, a recorded sequence, or a VAT. **Measured
+exception:** a fixed-step integrator (1/60 s) with checkpoints every 0.5 s,
+restoring the nearest earlier checkpoint and replaying on backward or cold seeks,
+rendered bit-identically across independent render workers in one Babylon.js
+project. Start its clock at the effect's own start so replay stays bounded. See
+the offline frame-exact domain doc.
 
 ## 7. Data-driven transitions (synthesis -- not documented by any source)
 

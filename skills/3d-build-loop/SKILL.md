@@ -51,7 +51,8 @@ somebody has to own the total budget the others are spending from.
 
 Emit every chosen `delegate()` call in a single response so they run
 concurrently. Give each lens: the request, the data shape, the target device and
-frame rate, and the strategist's encoding table. Give each lens
+frame rate, the delivery target (real-time, or offline video captured frame by
+frame by a seek-driven renderer), and the strategist's encoding table. Give each lens
 `context_depth="none"` — you want independent designs, not an echo.
 
 Each lens returns a design **with an explicit frame-cost claim**. If one comes

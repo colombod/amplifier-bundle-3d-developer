@@ -8,6 +8,9 @@ Preserve this separation when you answer.
 - **[COMM]** — community forums/blogs only; plausible, not official.
 - **[PRACTICE]** — standard VFX authoring practice, **not** established by the
   documentation surveyed. Sound craft; cite it as craft.
+- **[MEASURED]** / **[SOURCE]** — observed in, or read in Babylon.js 9.28 source
+  during, one real offline-video project (2026-09); rig and method in the
+  offline frame-exact domain doc.
 
 Unverified by the research: soft particles/depth fade by name; any canonical
 explosion recipe; curl noise, vector fields, attractors, SDF flow; and whether
@@ -33,6 +36,21 @@ particle needs to know*.
 Niagara simulation carries CPU cost for system/emitter management even when the
 solve runs on the GPU. Ten GPU systems of 100 particles are worse than one system
 of 1,000.
+
+**Second axis — stateless vs stateful.** When the timeline must seek (offline
+video capture, scrubbing, parallel render workers), the split that decides the
+design is not CPU vs GPU but **closed-form vs integrated** [MEASURED]:
+
+| Class | Examples | Seek behaviour |
+|---|---|---|
+| Stateless: `f(seed, t, path)` | stream along a path, orbit, burst, ambient field, travelling token | Any frame evaluated directly, O(1) |
+| Stateful: an integrator | boids/flock, advection, physics | Fixed step (1/60 s) + checkpoints (every 0.5 s) + replay; start its clock at the effect's own start so replay stays bounded |
+
+A drag-damped burst stays closed-form: `p = p0 + v0·(1 − e^(−kt))/k` plus the
+gravity term. Engine emitters that advance by delta with no set-time API (Babylon
+`ParticleSystem` / `GPUParticleSystem`) are stateful by construction and not
+seek-safe [SOURCE]; a manually driven `SolidParticleSystem` or thin-instance
+buffer evaluating `f(seed, t)` is.
 
 ## 2. Emitter and module anatomy
 
@@ -80,6 +98,21 @@ mode** — emissive layers additive, occluding layers alpha.
   as a controllable feature [DOC]; community sources report recurring
   translucency-sorting problems in practice [COMM]. Design so a sort failure
   degrades gracefully.
+- **Additive washes category hue to white where streams converge.** 2,000
+  particles converging into a 0.35-unit node saturate every category colour to
+  the same white [MEASURED — visually confirmed]. When hue encodes data, cap
+  per-particle emissive so it takes about three overlaps to cross the bloom
+  threshold (e.g. ~0.35–0.45 against a 0.55 threshold) [PRACTICE], and render
+  soft radial-falloff camera-facing quads rather than hard-edged meshes such as
+  icospheres, so overlap density ramps instead of stacking at full value
+  [PRACTICE].
+- **Additive and scene fog do not mix.** Fog mixes toward the fog colour, then
+  the additive blend adds that — fogged sprites brighten instead of fading.
+  Disable fog on additive materials [MEASURED].
+- **Depth-based post misreads blended particles.** A depth pre-pass that skips
+  alpha-blended meshes makes DOF blur particles by the depth *behind* them —
+  about 20x too soft against sky [MEASURED]. Exclude them from DOF, or force
+  their depth write.
 - **Depth fade / soft particles.** Not named in either engine's surveyed docs;
   what exists is Babylon developers sampling a depth texture (`depthSampler`)
   from a custom `ShaderMaterial` [COMM]. Fading alpha by (scene depth − particle
@@ -131,6 +164,10 @@ debris) → bake a flipbook → distance-cull the system.
 | Particles pop in front of each other while orbiting | Alpha layers depending on per-particle sorting; move emissive layers to additive and set explicit sort priority |
 | Frame collapses only when the camera is close | Overdraw — screen coverage rose, count did not |
 | Effect washes out to white | Additive stacking in HDR feeding bloom |
+| Category colours all converge to white at a destination | Per-particle emissive too high for the overlap count; hard-edged sprites |
+| Every coloured particle has the same white halo | Glow pass reads material emissive, not per-instance colour (Babylon `GlowLayer`) — exclude sprites from glow [MEASURED] |
+| Particles pop in at full size on arrival | Size/alpha faded by lifetime rather than **path progress** — fade by progress along the path [MEASURED] |
+| Seeking or a second render worker gives a different effect | Stateful emitter, or `Math.random` — see stateless vs stateful, §1 |
 | GPU sim enabled but CPU time unchanged | Per-system management overhead is still CPU-side; too many separate systems |
 | Particles persist after the effect ends | Emission stopped, system never disposed |
 | Fluid surface looks like blobs | Depth blur too weak, or particle radius small relative to spacing |
@@ -140,7 +177,8 @@ debris) → bake a flipbook → distance-cull the system.
 - **Babylon.js:** `ParticleSystem` (CPU) · `GPUParticleSystem` (GPU, no
   sub-emitters) · `SolidParticleSystem` for mesh debris · blend-mode and
   sprite-sheet properties · Fluid Renderer for screen-space liquid · Node
-  Particle Editor · depth texture via custom `ShaderMaterial` for depth fade.
+  Particle Editor (`NodeParticleSystem` absent from the 9.28 UMD package
+  [SOURCE]) · depth texture via custom `ShaderMaterial` for depth fade.
 - **Unreal / Niagara:** System → Emitter → Particle module stacks (Spawn/Update)
   · Events for cross-emitter triggering · GPU Simulation Stages · sprite and mesh
   renderers with `sort_mode` · `TranslucencySortPriority` · Niagara Fluids
@@ -163,5 +201,7 @@ Name the construct, then route API-level work to the platform specialist.
 7. **Claiming a solver class.** Screen-space fluid rendering is a renderer, not a
    simulation.
 8. **Many small systems instead of one large one.**
-9. **Presenting craft as documentation** — explosion recipes, soft particles and
+9. **Using an emitter that cannot seek on a timeline that must.** See §1's
+   second axis before choosing the system.
+10. **Presenting craft as documentation** — explosion recipes, soft particles and
    flow fields have no documentation trail here.

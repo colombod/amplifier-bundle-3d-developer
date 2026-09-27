@@ -21,7 +21,7 @@ digraph n_3d_developer {
         fillcolor="#f9f9f9"
         color="#999999"
 
-        beh_3d_core_behavior [label="3d-core-behavior\n1 tools · 1 ctx\n~3198 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+        beh_3d_core_behavior [label="3d-core-behavior\n1 tools · 1 ctx\n~3202 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
         beh_3d_babylonjs_behavior [label="3d-babylonjs-behavior\n~285 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
         beh_3d_unreal_behavior [label="3d-unreal-behavior\n~267 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
     }
@@ -65,7 +65,7 @@ digraph n_3d_developer {
         fillcolor="#f9f9f9"
         color="#999999"
 
-        ctx_3d_developer_awareness_md [label="3d-developer-awareness.md\n~491 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+        ctx_3d_developer_awareness_md [label="3d-developer-awareness.md\n~495 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
     }
 
     subgraph cluster_legend {

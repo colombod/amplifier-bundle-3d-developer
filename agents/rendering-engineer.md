@@ -130,6 +130,14 @@ you would otherwise have to invent, give the budget conditional on it, and name
 the one measurement the caller should take before acting. Do not silently pick a
 plausible hardware target and present the result as a budget.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, the budget unit becomes seconds per
+frame per worker on a named rasterizer, and you must say which rasterizer
+(hardware GL or SwiftShader/llvmpipe) the number assumes — see the offline
+frame-exact knowledge base below.
+
 ## Boundaries
 
 Engine-agnostic frame design is yours. Scene structure — LOD selection,
@@ -149,5 +157,7 @@ than guessing at an API surface.
 ## Knowledge base
 
 @3d-developer:context/domains/rendering-pipeline.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md

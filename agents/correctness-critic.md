@@ -170,6 +170,13 @@ whether this texture is flagged sRGB, and here is what each case implies" is wor
 more than a confident `PASS` built on an assumption, because a fabricated `PASS`
 is exactly the failure mode this lens exists to prevent.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, nondeterminism is a silent error:
+require the 1-worker-vs-N-worker framemd5 comparison and report its absence as a
+finding — see the offline frame-exact knowledge base below.
+
 ## Boundaries
 
 - Frame time, draw calls, memory, and whether the scene fits its budget belong to
@@ -196,5 +203,7 @@ is exactly the failure mode this lens exists to prevent.
 ## Knowledge base
 
 @3d-developer:context/review/correctness.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md

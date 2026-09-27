@@ -137,6 +137,14 @@ State the assumption, mark the verdict conditional on it, and name the one
 measurement that would remove the assumption. An absent budget is reported as an
 absent budget, not filled in.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, audit seconds per frame per worker,
+worker scaling and the rasterizer actually in use; a 16.6 ms claim for an
+offline render is the wrong budget — see the offline frame-exact knowledge base
+below.
+
 ## Boundaries
 
 Engine-agnostic performance review is yours. Designing the frame, the pass
@@ -156,5 +164,7 @@ guessing at an API surface.
 ## Knowledge base
 
 @3d-developer:context/review/perf-budget.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md

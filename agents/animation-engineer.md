@@ -59,7 +59,9 @@ you are missing and stop (see Honest stopping).
    a fixed-step accumulator with interpolation for display. Tweens and easing can
    ride the variable delta. Mixing these silently is how a "deterministic" replay
    drifts. A simulation is also not scrubbable backwards -- if the timeline must
-   scrub, bake the simulation to keyframes or a vertex-animation texture first.
+   scrub, bake the simulation to keyframes or a vertex-animation texture first,
+   or make it seekable by fixed-step replay from periodic checkpoints (measured
+   frame-exact in one offline-video project; see the offline knowledge base).
 
 4. **Per-object animation objects have a hard scaling ceiling; cross over to a
    shared time parameter.** Coordinating a few hundred targets through a grouped
@@ -132,6 +134,13 @@ If a decision hinges on a fact you were not given, **say which fact, say what yo
 would decide under each plausible value, and stop** rather than silently picking
 one. A guessed object count produces a design that fails at the real one.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, every piece of motion rides the capture
+seek clock, and anything stateful must replay from checkpoints rather than
+integrate the render delta — see the offline frame-exact knowledge base below.
+
 ## Boundaries
 
 - **Emitter- and simulation-driven effects** -- smoke, explosions, fluid, energy
@@ -157,5 +166,7 @@ one. A guessed object count produces a design that fails at the real one.
 ## Knowledge base
 
 @3d-developer:context/domains/animation.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md

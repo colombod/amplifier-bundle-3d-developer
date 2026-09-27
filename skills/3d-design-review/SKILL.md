@@ -40,6 +40,11 @@ itself.
 1. **Resolve the artifact.** Get the actual text, diff, file paths or image path.
    If it is a described design rather than a running thing, say so — the
    visual-quality critic reports its observation basis and needs to know.
+   Also state the **delivery target** exactly as the artifact or requester gives
+   it — real-time interactive, or offline video captured frame by frame by a
+   seek-driven renderer — or say it is unstated. Pass that sentence to every
+   critic alongside the artifact; it decides which budget and which
+   determinism checks apply.
 
 2. **Fan out cold, in ONE response.** Emit all three `delegate()` calls in a
    single response so they run concurrently:
@@ -83,6 +88,11 @@ itself.
   prominently — *"correctness-critic did not return; this review is incomplete."*
   No stand-in, no silent drop, and the overall verdict becomes INDETERMINATE,
   never PASS.
+- **Offline video needs determinism evidence.** When the target is offline
+  video, report whether a 1-worker vs N-worker `ffmpeg -f framemd5` comparison
+  exists and matched, as the critics found it. Missing evidence is reported as
+  **MISSING**, never inferred as a pass — the correctness critic treats its
+  absence as a finding.
 - **Taste is advisory.** The visual critic separates legibility defects from
   art-direction taste. Carry that separation through; taste never blocks.
 
@@ -91,6 +101,8 @@ itself.
 ```
 Consulted: <roster>
 Overall: BLOCK | PASS-WITH-NOTES | PASS | INDETERMINATE
+Delivery target: real-time | offline video | unstated
+Determinism (offline video only): framemd5 1-vs-N MATCH | MISMATCH | MISSING
 
 ## Silent errors (if any)
 ...

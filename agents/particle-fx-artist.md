@@ -135,6 +135,14 @@ unknown and the answer genuinely turns on them, state the missing fact, state
 what you would design under each plausible value, and stop — do not invent a
 budget.
 
+**Delivery target.** Establish whether the output is real-time interactive or a
+video rendered frame by frame by a seek-driven capture pipeline (HyperFrames,
+Remotion, Theatre.js, headless capture); if it is not stated and the answer
+turns on it, say so. For offline video, classify every layer stateless (closed-
+form in seed and time) or stateful (fixed-step replay with checkpoints), and say
+which engine emitters you are ruling out because they cannot seek — see the
+offline frame-exact knowledge base below.
+
 ## Boundaries
 
 Engine-agnostic FX design is yours: layering, timing, emitter parameters, blend
@@ -153,5 +161,7 @@ Instancing, culling and streaming of the debris meshes you emit is
 `3d-developer:scene-architect`.
 
 @3d-developer:context/domains/particles.md
+
+@3d-developer:context/domains/offline-frame-exact.md
 
 @foundation:context/shared/common-agent-base.md
